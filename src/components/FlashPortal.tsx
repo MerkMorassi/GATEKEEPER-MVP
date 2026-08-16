@@ -16,9 +16,8 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
     if (e) e.preventDefault();
     setError(null);
 
-    // Direct client fallback
-    if (username.trim().toLowerCase() === 'client' || (!username && !passphrase)) {
-      onNavigate('client', null);
+    if (!username.trim() && !passphrase.trim()) {
+      setError('Please enter your credentials.');
       return;
     }
 
@@ -44,38 +43,6 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
         setError(data.error || 'Authentication failed. Please verify credentials.');
       }
     } catch (err: any) {
-      setError('Connection error during authentication.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fillAndSubmit = async (user: string, pass: string) => {
-    setUsername(user);
-    setPassphrase(pass);
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, passphrase: pass }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.role) {
-        if (data.role === 'provider') {
-          onNavigate('provider', 'provider');
-        } else if (data.role === 'admin') {
-          onNavigate('agent', 'admin');
-        } else if (data.role === 'client') {
-          onNavigate('client', null);
-        }
-      } else {
-        setError(data.error || 'Authentication failed.');
-      }
-    } catch (err) {
       setError('Connection error during authentication.');
     } finally {
       setLoading(false);
@@ -161,29 +128,6 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
               </button>
             </form>
           </div>
-
-          {/* Quick Preset Buttons */}
-          <div className="mt-8 pt-4 border-t border-surface-a10 space-y-2">
-            <span className="text-[10px] text-surface-a40 uppercase tracking-widest block mb-2">Quick Access Presets</span>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => fillAndSubmit('provider', 'gk_provider_passphrase_dev_2026')}
-                className="px-2.5 py-1.5 bg-tonal-a0 hover:bg-surface-a10 border border-surface-a20 rounded-lg text-surface-a50 hover:text-theme-light transition-all text-left truncate flex items-center space-x-1.5"
-              >
-                <Sliders className="w-3 h-3 text-info-a0 flex-shrink-0" />
-                <span className="truncate">Provider Login</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillAndSubmit('admin', 'gk_admin_secret_dev_2026')}
-                className="px-2.5 py-1.5 bg-tonal-a0 hover:bg-surface-a10 border border-surface-a20 rounded-lg text-surface-a50 hover:text-theme-light transition-all text-left truncate flex items-center space-x-1.5"
-              >
-                <LayoutDashboard className="w-3 h-3 text-warning-a0 flex-shrink-0" />
-                <span className="truncate">Admin Login</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Right: Direct Portal Option Cards */}
@@ -221,7 +165,7 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
               if (currentRole === 'provider') {
                 onNavigate('provider', 'provider');
               } else {
-                fillAndSubmit('provider', 'gk_provider_passphrase_dev_2026');
+                onNavigate('provider', null);
               }
             }}
             className="group cursor-pointer bg-surface-a0 hover:bg-tonal-a0 border border-surface-a10 hover:border-success-a0/50 rounded-2xl p-5 shadow-lg transition-all duration-200 flex items-start space-x-4 relative overflow-hidden"
@@ -241,7 +185,7 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
                   </span>
                 ) : (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-a10 text-surface-a40 border border-surface-a20">
-                    PROTECTED
+                    AUTH REQUIRED
                   </span>
                 )}
               </div>
@@ -261,7 +205,7 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
               if (currentRole === 'admin') {
                 onNavigate('agent', 'admin');
               } else {
-                fillAndSubmit('admin', 'gk_admin_secret_dev_2026');
+                onNavigate('agent', null);
               }
             }}
             className="group cursor-pointer bg-surface-a0 hover:bg-tonal-a0 border border-surface-a10 hover:border-warning-a0/50 rounded-2xl p-5 shadow-lg transition-all duration-200 flex items-start space-x-4 relative overflow-hidden"
@@ -281,7 +225,7 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
                   </span>
                 ) : (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-a10 text-surface-a40 border border-surface-a20">
-                    ADMIN ONLY
+                    AUTH REQUIRED
                   </span>
                 )}
               </div>
