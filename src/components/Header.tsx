@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut } from 'lucide-react';
+import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut, Sliders } from 'lucide-react';
 
 interface HeaderProps {
   currentTab: 'portal' | 'client' | 'provider' | 'agent' | 'scanner';
@@ -9,7 +9,7 @@ interface HeaderProps {
   onLogout?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, providerActive, role, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, role, onLogout }) => {
   return (
     <header className="bg-surface-a0 border-b border-surface-a10 text-theme-light sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, provide
                 : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${providerActive ? 'bg-success-a0' : 'bg-danger-a0'}`} />
+            <Sliders className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Provider</span>
           </button>
 
