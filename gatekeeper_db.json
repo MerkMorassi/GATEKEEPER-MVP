@@ -1,0 +1,828 @@
+{
+  "provider": {
+    "id": "prov_merk_001",
+    "name": "Merk Morassi",
+    "email": "merk@merkmorassi.com",
+    "payoutEmail": "merkmerkmorassi@gmail.com",
+    "facetimeHandle": "https://facetime.apple.com/join#v=1&p=1z501Y06EfGVyAKrTEhpjw&k=WHqbRARgturVWBiqJXvErxiSLSIRd6-GyoXhqvN6Sfs&l=MERK%20MORASSI",
+    "active": true,
+    "services": [
+      {
+        "id": "srv_1",
+        "name": "30 Minutes 1-on-1 Confidential Consultation",
+        "description": "30 Minutes Direct 1-on-1 Confidential Consultation Session with Merk Morassi.",
+        "feeCents": 15000,
+        "currency": "USD"
+      },
+      {
+        "id": "srv_1786917722504",
+        "name": "60 Minutes 1-on-1 Confidential Consultation",
+        "description": "60 Minutes Direct 1-on-1 Confidential Consultation Session with Merk Morassi.",
+        "feeCents": 30000,
+        "currency": "USD"
+      },
+      {
+        "id": "srv_1786917772603",
+        "name": "90 Minutes 1-on-1 Confidential Consultation",
+        "description": "90 Minutes Direct 1-on-1 Confidential Consultation Session with Merk Morassi.",
+        "feeCents": 45000,
+        "currency": "USD"
+      }
+    ]
+  },
+  "orders": {
+    "ord_test_1786905927006": {
+      "id": "ord_test_1786905927006",
+      "providerId": "prov_merk_001",
+      "serviceId": "srv_1",
+      "serviceName": "1-on-1 Confidential Consultation",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "settled",
+      "createdAt": "2026-08-16T18:45:27.006Z",
+      "updatedAt": "2026-08-16T18:45:27.006Z"
+    },
+    "ord_pay_race_1786905927679": {
+      "id": "ord_pay_race_1786905927679",
+      "providerId": "prov_merk_001",
+      "serviceId": "srv_1",
+      "serviceName": "1-on-1 Confidential Consultation",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "settled",
+      "createdAt": "2026-08-16T18:45:27.679Z",
+      "updatedAt": "2026-08-16T18:45:27.694Z",
+      "paypalOrderId": "pp_ord_pay_race_1786905927679",
+      "paypalCaptureId": "cap_sb_ptdoq2y"
+    },
+    "ord_test_1786907040826": {
+      "id": "ord_test_1786907040826",
+      "providerId": "prov_merk_001",
+      "serviceId": "srv_1",
+      "serviceName": "1-on-1 Confidential Consultation",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "settled",
+      "createdAt": "2026-08-16T19:04:00.826Z",
+      "updatedAt": "2026-08-16T19:04:00.826Z"
+    },
+    "ord_pay_race_1786907041351": {
+      "id": "ord_pay_race_1786907041351",
+      "providerId": "prov_merk_001",
+      "serviceId": "srv_1",
+      "serviceName": "1-on-1 Confidential Consultation",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "settled",
+      "createdAt": "2026-08-16T19:04:01.351Z",
+      "updatedAt": "2026-08-16T19:04:01.375Z",
+      "paypalOrderId": "pp_ord_pay_race_1786907041351",
+      "paypalCaptureId": "cap_sb_wl0w959"
+    }
+  },
+  "payments": {
+    "ord_test_1786905927006": {
+      "orderId": "ord_test_1786905927006",
+      "paypalOrderId": "paypal_ord_test_1786905927006",
+      "paypalCaptureId": "cap_sb_o8ju0sv",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "captured",
+      "payerEmail": "client.sandbox@example.com",
+      "payerName": "Verified Sandbox Client",
+      "timestamp": "2026-08-16T18:45:27.007Z",
+      "verifiedServerSide": true
+    },
+    "ord_pay_race_1786905927679": {
+      "orderId": "ord_pay_race_1786905927679",
+      "paypalOrderId": "pp_ord_pay_race_1786905927679",
+      "paypalCaptureId": "cap_sb_ptdoq2y",
+      "payerEmail": "client.sandbox@example.com",
+      "payerName": "Verified Sandbox Client",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "captured",
+      "timestamp": "2026-08-16T18:45:27.689Z",
+      "verifiedServerSide": true
+    },
+    "ord_test_1786907040826": {
+      "orderId": "ord_test_1786907040826",
+      "paypalOrderId": "paypal_ord_test_1786907040826",
+      "paypalCaptureId": "cap_sb_z42p876",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "captured",
+      "payerEmail": "client.sandbox@example.com",
+      "payerName": "Verified Sandbox Client",
+      "timestamp": "2026-08-16T19:04:00.827Z",
+      "verifiedServerSide": true
+    },
+    "ord_pay_race_1786907041351": {
+      "orderId": "ord_pay_race_1786907041351",
+      "paypalOrderId": "pp_ord_pay_race_1786907041351",
+      "paypalCaptureId": "cap_sb_wl0w959",
+      "payerEmail": "client.sandbox@example.com",
+      "payerName": "Verified Sandbox Client",
+      "amountCents": 15000,
+      "currency": "USD",
+      "status": "captured",
+      "timestamp": "2026-08-16T19:04:01.358Z",
+      "verifiedServerSide": true
+    }
+  },
+  "settlements": {
+    "ord_test_1786905927006": {
+      "orderId": "ord_test_1786905927006",
+      "grossCents": 15000,
+      "providerCents": 12750,
+      "agentCents": 2250,
+      "currency": "USD",
+      "status": "settled",
+      "timestamp": "2026-08-16T18:45:27.007Z"
+    },
+    "ord_pay_race_1786905927679": {
+      "orderId": "ord_pay_race_1786905927679",
+      "grossCents": 15000,
+      "providerCents": 12750,
+      "agentCents": 2250,
+      "currency": "USD",
+      "status": "settled",
+      "timestamp": "2026-08-16T18:45:27.692Z"
+    },
+    "ord_test_1786907040826": {
+      "orderId": "ord_test_1786907040826",
+      "grossCents": 15000,
+      "providerCents": 12750,
+      "agentCents": 2250,
+      "currency": "USD",
+      "status": "settled",
+      "timestamp": "2026-08-16T19:04:00.828Z"
+    },
+    "ord_pay_race_1786907041351": {
+      "orderId": "ord_pay_race_1786907041351",
+      "grossCents": 15000,
+      "providerCents": 12750,
+      "agentCents": 2250,
+      "currency": "USD",
+      "status": "settled",
+      "timestamp": "2026-08-16T19:04:01.373Z"
+    }
+  },
+  "payouts": {
+    "GK-ord_pay_race_1786905927679-PROVIDER": {
+      "payoutId": "GK-ord_pay_race_1786905927679-PROVIDER",
+      "orderId": "ord_pay_race_1786905927679",
+      "recipientEmail": "merk.payouts@merkmorassi.com",
+      "amountCents": 12750,
+      "currency": "USD",
+      "status": "completed",
+      "paypalBatchId": "sb_batch_1786905927693",
+      "timestamp": "2026-08-16T18:45:27.693Z"
+    },
+    "GK-ord_pay_race_1786907041351-PROVIDER": {
+      "payoutId": "GK-ord_pay_race_1786907041351-PROVIDER",
+      "orderId": "ord_pay_race_1786907041351",
+      "recipientEmail": "merk.payouts@merkmorassi.com",
+      "amountCents": 12750,
+      "currency": "USD",
+      "status": "completed",
+      "paypalBatchId": "sb_batch_1786907041374",
+      "timestamp": "2026-08-16T19:04:01.374Z"
+    }
+  },
+  "entitlements": {
+    "gk_tok_c93b2ef04fdc1460b40960dacab325b5f13d450d5b8c6ba3": {
+      "token": "gk_tok_c93b2ef04fdc1460b40960dacab325b5f13d450d5b8c6ba3",
+      "orderId": "ord_test_1786905927006",
+      "providerId": "prov_merk_001",
+      "status": "redeemed",
+      "createdAt": "2026-08-16T18:45:27.010Z",
+      "expiresAt": "2026-08-17T18:45:27.010Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAABQhSURBVO3BwY1sOYxFwVNCGcAlfaD/ptAHLulBzd+OQMwo8TrzV7duxNfPH4iIXGghInKphYjIpRYiIpdaiIhcaiEicqmFiMilFiIil1qIiFxqISJyqYWIyKUWIiKX+uZF5sFv1ZVMzIMnupJ3MQ8mXcnOPHiqK3nKPNh1JRPz4FRXMjEPTnUlE/Pgk7qSnXkw6UpOmQdPdSVPmQe/VVdyaiEicqmFiMilFiIil1qIiFzqm39AV/JJ5sFTXckp82DSlUzMg1NdyTt0JU+ZB091JU91JRPzYGceTLqSdzAPJubBU+bBqa5kYh7szINJV/JUV/JJ5sETCxGRSy1ERC61EBG51EJE5FILEZFLffNG5sFTXck7mAeTruSUeTDpSk6ZB+9gHky6klNdycQ82JkHr+hKdubBU13JxDzYdSUT82DSley6kol58FRXsjMPXtGV7MyDTzIPnupK3mEhInKphYjIpRYiIpdaiIhcaiEicqlvLtCV/Nt0JTvzYNKVPGUe7LqSU13JxDz4rcyDp8yDSVdyyjw41ZW8wjzYdSUT82DXlfyXLURELrUQEbnUQkTkUgsRkUt9I/+vrmRiHryLebDrSk6ZB5OuZNKV7MyDSVeyMw9eYR481ZXszINJV/KUebDrSp7qSibmwSnz4Kmu5DYLEZFLLURELrUQEbnUQkTkUgsRkUt980ZdyW9gHuy6klPmwaQrmZgHu65k0pWcMg9OdSWvMA9OmQenupKnzIOJebDrSk6ZB5Ou5JR5MOlKdubBjbqS32ohInKphYjIpRYiIpdaiIhc6pt/gHnwX2Ee7LqSiXkw6Up25sGkK5mYB7uuZGIenDIPJl3JzjyYdCU78+AV5sGuK3lFV7IzDyZdyTt0JRPzYNeVTMyDSVeyMw8mXcnEPDhlHuy6kleYB/8mCxGRSy1ERC61EBG51EJE5FILEZFLffOiruS/wDx4qiuZmAfvYB6cMg/exTx4qit5h65kYh7supLfoCuZmAe/VVfyX7AQEbnUQkTkUgsRkUstREQutRARudQ3b2QePNWV7MyDSVdyqit5yjyYdCWnzINJV/JfYB58knlwyjx4RVfySV3JKfNg0pU8YR481ZWcMg+e6kpOLURELrUQEbnUQkTkUgsRkUt9/fzBC8yDXVfyCvNg15VMzINdVzIxD96hK5mYB5OuZGce/AZdycQ82HUl72Ie7LqSiXlwqis5ZR68S1fylHmw60peYR7supJPMg8mXcnOPHiqKzm1EBG51EJE5FILEZFLLURELrUQEbnU188fPGQeTLqSU+bBpCvZmQdPdSUT8+AdupJXmAenupKdefAbdCUT82DXlXySeTDpSp4yD57qSnbmwSu6klPmwVNdyc48eKoreYeFiMilFiIil1qIiFxqISJyqW9eZB7supJP6kom5sGkK9mZB6e6kol58JR5MOlKTpkHu67kXcyDXVfyiq7kHcyDdzEPdl3JpCvZmQeTrmRiHuy6kleYB7uu5Kmu5FRXMjEPdl3JJy1ERC61EBG51EJE5FILEZFLLURELvX18wcvMA9+q65kYh7supKJebDrSibmwSd1JafMg6e6kol58A5dycQ8mHQlO/PgVFfylHnwVFdyyjyYdCWnzINJV/KUefBEVzIxDyZdyRMLEZFLLURELrUQEbnUQkTkUgsRkUt986Ku5JR5cKormZgHu65kYh58UlfySebBU13JxDzYmQeTruQp82BnHky6kol5cKorOWUeTLqSU13Jzjx4hXnwlHmw60pOmQeTruQ3MA92XcmphYjIpRYiIpdaiIhcaiEicqmvnz94E/Ng0pXszINJV7IzD17RlezMg6e6klPmwSu6kp15MOlKTpkHT3UlO/Ng0pXcyDzYdSUT82DSlezMg1d0JTvzYNKVvIN5MOlK/raFiMilFiIil1qIiFxqISJyqYWIyKW+fv7gFzMPdl3JU+bBqa5kYh5MupKnzINdV/Iu5sE7dCXvYh480ZV8knkw6UpOmQeTrmRiHuy6kncxD3ZdycQ82HUlE/Ng0pU8sRARudRCRORSCxGRSy1ERC61EBG51Dd/gXmw60pOmQeTruTfxjyYdCU78+CprmTSlZwyD3ZdycQ8mHQlT3UlT5gHr+hKdubBqa5kYh6c6krexTw41ZVMupKdeTDpSnbmwaQrmZgHu67k1EJE5FILEZFLLURELrUQEbnU188fvMA8eKor2ZkHk67klHlwqiuZmAef1JU8ZR6c6kom5sE7dCW/gXmw60rexTw41ZWcMg/epSt5yjw41ZWcMg9OdSWnFiIil1qIiFxqISJyqYWIyKUWIiKX+vr5gzcx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",
+      "redeemedAt": "2026-08-16T18:45:27.084Z"
+    },
+    "gk_tok_4bee15aacfcfeed9fae792a805e3597832805c5faed69d46": {
+      "token": "gk_tok_4bee15aacfcfeed9fae792a805e3597832805c5faed69d46",
+      "orderId": "ord_expired",
+      "providerId": "prov_merk_001",
+      "status": "active",
+      "createdAt": "2026-08-16T18:45:27.085Z",
+      "expiresAt": "2026-08-16T17:45:27.110Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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"
+    },
+    "gk_tok_1676e70ed676bc0fa1d9468b1868f53088595f4323e41567": {
+      "token": "gk_tok_1676e70ed676bc0fa1d9468b1868f53088595f4323e41567",
+      "orderId": "ord_race_01",
+      "providerId": "prov_merk_001",
+      "status": "redeemed",
+      "createdAt": "2026-08-16T18:45:27.582Z",
+      "expiresAt": "2026-08-17T18:45:27.582Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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",
+      "redeemedAt": "2026-08-16T18:45:27.632Z"
+    },
+    "gk_tok_d93a3661c14f97afdef888788ed555b866bc731b5c2430a1": {
+      "token": "gk_tok_d93a3661c14f97afdef888788ed555b866bc731b5c2430a1",
+      "orderId": "ord_pay_race_1786905927679",
+      "providerId": "prov_merk_001",
+      "status": "active",
+      "createdAt": "2026-08-16T18:45:27.694Z",
+      "expiresAt": "2026-08-17T18:45:27.694Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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PHjHPJi6ksk8ONWVnDIPpq5kh3lwoiuZzIMdXckO82DqSibzYOpKJvNgR1fylK7klHnwDRYiIpdaiIhcaiEicqmFiMilfthkHnyLrmTqSibz4ERXssM8mLqSU+bB1JXsMA+mruQd82AyD6auZId5sMM8mLqSHebB1JVMXck75sGTzINT5sGprmQyDybz4FVXMpkHp8yDqSv5VgsRkUstREQutRARudRCRORSP/wHXcmnmQffqiuZzIOpK5m6kh3mwY6uZDIP3ulKJvNgh3lwqiv5Bl3JZB5MXcmTzINT5sGOrmQyD97pSibzYEdXcso82NGVPGUhInKphYjIpRYiIpdaiIhc6oeHmQenupJP60qeYh6cMg+mruRJXck75sGnmQefZh78bebBjq5k6kpOmQenupJX5sHUlewwDz6tK5nMg6krObEQEbnUQkTkUgsRkUstREQu9cP/CPPgKebB1JVMXckO82DqSnZ0JTvMg6krOdGV7OhKTpkHO7qSHebBjq7kHfPgVFeywzzY0ZXs6Eom82DqSt4xD3Z0JTvMg2+1EBG51EJE5FILEZFLLURELvXD/4iuZDIPJvPgVVfyL5gH38o82NGVTObB1JVMXclkHkzmwamuZDIPXnUlU1cymQdTV7LDPJi6ksk82NGVPKUreZJ5MHUlO8yDyTyYupLJPJi6kncWIiKXWoiIXGohInKphYjIpX54WFfyf11XMpkHU1dyqiuZzIOpK5nMg6kr2WEevOpKdpgHk3kwdSWnupId5sHUlezoSl6ZB1NXssM82NGVTObBp3Ulk3lwoiuZzIOpK5nMg6krmbqSU13JiYWIyKUWIiKXWoiIXGohInKpX7//YIN58C26klPmwbfqSnaYB1NXMpkHU1fyyjzY0ZXsMA+mrmQyD051JZN5MHUlk3nwTleywzzY0ZVM5sGprmQyD050JZN5sKMrOWUe7OhKJvNgR1fyzkJE5FILEZFLLURELrUQEbnUr99/ICJyoYWIyKUWIiKXWoiIXGohInKphYjIpRYiIpdaiIhcaiEicqn/BwZAcamMaPT7AAAAAElFTkSuQmCC"
+    },
+    "gk_tok_b35e9d524446a0910808fd6bc6a022430ee029383293d83f": {
+      "token": "gk_tok_b35e9d524446a0910808fd6bc6a022430ee029383293d83f",
+      "orderId": "ord_test_1786907040826",
+      "providerId": "prov_merk_001",
+      "status": "redeemed",
+      "createdAt": "2026-08-16T19:04:00.829Z",
+      "expiresAt": "2026-08-17T19:04:00.829Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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MjEPJubBk8yDv+lKJubBpCuZmAeTrmRiHky6kol58M26khO6kh3mwaQreYeFiMilFiIil1qIiFxqISJyqYWIyKVe/IB5cEJXcoJ5cEJXssM8mHQlJ5gHk65kYh7s6Eom5sGkK5mYB6eYBzvMg0lXMjEPJl3JNzMPJl3JxDw4wTw4wTw4oSvZsRARudRCRORSCxGRSy1ERC61EBG51Isf6Eo+SVeywzyYmAeTrmTSlUzMg0lXMjEPJl3JJzEPdnQlp5gHk67kSebBpCt5UlcyMQ8mXcnEPNjRlZxgHky6kh3mwZMWIiKXWoiIXGohInKphYjIpRYiIpd68QPmwTfoSiZdyTuYB5OuZGIe7OhKvoF58DddyQnmwaQr2dGVTMyDSVdygnkw6Uom5sGTzINJV3KCefAOCxGRSy1ERC61EBG51EJE5FILEZFLvTioK3kH82CHeTDpSibmwQldyQldyQnmwTt0JU/rSibmwTuYB5OuZNKVfJKu5EldycQ8mHQlJyxERC61EBG51EJE5FILEZFLLURELvXiHzAPTuhKPklXMjEPdpgHO8yDHV3JpCuZmAeTrmRiHkzMg6eZB5OuZNKV7DAPnmQe7OhKnmQePMk8mHQlk67kSQsRkUstREQutRARudRCRORSCxGRS724UFfyDubBjq7kSebBpCt5l65kYh6cYB5MupJJV3JCV7LDPNjRlbyDebCjK9lhHky6khMWIiKXWoiIXGohInKphYjIpRYiIpd6cSHzYEdXMjEPJl3JxDyYdCU7zINJV7KjK5mYBzu6klPMg0lXssM82GEenNCVnNCVnGAe7OhK3sE82GEeTLqSHQsRkUstREQutRARudRCRORSCxGRS/36/QebzINJV/IO5sGkK9lhHjypK9lhHky6kol5MOlKJubBpCvZYR5MupJd5sEJXcnEPJh0JRPz4ISuZGIe7OhKJubBpCv5JObBpCuZmAeTruSEhYjIpRYiIpdaiIhcaiEicqmFiMilXhxkHnyzruRJ5sGOrmRiHky6kol58KSuZGIeTLqSU7qSiXmwwzx4h65kYh5MzINJVzIxDyZdyQnmwaQreZJ5MOlKdixERC61EBG51EJE5FILEZFLLURELvXr9x+IiFxoISJyqYWIyKUWIiKXWoiIXGohInKphYjIpRYiIpdaiIhcaiEicqmFiMilFiIil/oPlumAml9D5QsAAAAASUVORK5CYII=",
+      "redeemedAt": "2026-08-16T19:04:00.891Z"
+    },
+    "gk_tok_9aeed04ff7f9304705da6d5b455a6600ec8e1861ad71be0c": {
+      "token": "gk_tok_9aeed04ff7f9304705da6d5b455a6600ec8e1861ad71be0c",
+      "orderId": "ord_expired",
+      "providerId": "prov_merk_001",
+      "status": "active",
+      "createdAt": "2026-08-16T19:04:00.892Z",
+      "expiresAt": "2026-08-16T18:04:00.916Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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1ZXszINJV7IzDz5hHuy6kqe6kp+qK5mYB6e6kol5MOlK3mAeTLqSU+bBriv5TgsRkUstREQutRARudRCRORSCxGRS33xP9CVfCfz4C3mwa4reco8mHQlE/Ng15Wc6ko+YR7supKJefBUV/KUebDrSk6ZB5/oSp4wDyZdySnzYNKVTMyDXVfyVFfyVFfyty1ERC61EBG51EJE5FILEZFLffEi8+CpruQp82DXlUy6kp158ImuZGceTMyDSVeyMw+e6kq+k3nwncyDp7qSU+bBW8yDXVfyncyDt5gHT3UlTyxERC61EBG51EJE5FILEZFLLURELvWF/B/mwXfqSp7qSp7qSp7oSp4yDyZdyVPmwa4r+YR5cKoreaor2ZkHk67kqa5kZx5MupKJebDrSibmwa4r+U4LEZFLLURELrUQEbnUQkTkUl9cyjx4qit5i3nwncyDU13JzjyYdCUT82DXlbylKzllHky6klPmwVNdya4rmZgHk65kZx6c6ko+0ZXszINJV/K3LURELrUQEbnUQkTkUgsRkUstREQu9cWLupKfoCvZmQffqSv5RFdyyjw41ZVMupKdeXCqK5mYB0+ZB5OuZGceTLqSU13JxDzYdSXfyTz4hHmw60om5sFPZR5MupInFiIil1qIiFxqISJyqYWIyKUWIiKX+vX7Dz5gHvxUXclPYB7cpiuZmAeTrmRnHrylK9mZB2/pSk6ZB6e6kqfMg7d0JafMg1NdyRsWIiKXWoiIXGohInKphYjIpX79/gMRkQstREQutRARudRCRORSCxGRSy1ERC61EBG51EJE5FILEZFLLURELrUQEbnU/wP1zAp77GhxoQAAAABJRU5ErkJggg=="
+    },
+    "gk_tok_ab9fd06c09dd503b0225f5e35dc6ff5721c97cd9d80e18cd": {
+      "token": "gk_tok_ab9fd06c09dd503b0225f5e35dc6ff5721c97cd9d80e18cd",
+      "orderId": "ord_race_01",
+      "providerId": "prov_merk_001",
+      "status": "redeemed",
+      "createdAt": "2026-08-16T19:04:01.270Z",
+      "expiresAt": "2026-08-17T19:04:01.270Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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",
+      "redeemedAt": "2026-08-16T19:04:01.346Z"
+    },
+    "gk_tok_41fbb143ba07b0a5132dcd43fee648c531e72666fd5eac9d": {
+      "token": "gk_tok_41fbb143ba07b0a5132dcd43fee648c531e72666fd5eac9d",
+      "orderId": "ord_pay_race_1786907041351",
+      "providerId": "prov_merk_001",
+      "status": "active",
+      "createdAt": "2026-08-16T19:04:01.376Z",
+      "expiresAt": "2026-08-17T19:04:01.376Z",
+      "facetimeDeliveryInstruction": "Open FaceTime on your Apple device and connect directly to: merk@merkmorassi.com",
+      "qrDataUrl": "data:image/png;base64,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"
+    }
+  },
+  "auditEvents": [
+    {
+      "id": "audit_1786917961502_lfoft",
+      "timestamp": "2026-08-16T22:06:01.502Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merkmerkmorassi@gmail.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": true,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "30 Minutes 1-on-1 Confidential Consultation",
+              "description": "30 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917722504",
+              "name": "60 Minutes 1-on-1 Confidential Consultation",
+              "description": "60 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 30000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917772603",
+              "name": "90 Minutes 1-on-1 Confidential Consultation",
+              "description": "90 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 45000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786917910777_rm6dz",
+      "timestamp": "2026-08-16T22:05:10.777Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merk.payouts@merkmorassi.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": true,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "30 Minutes 1-on-1 Confidential Consultation",
+              "description": "30 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917722504",
+              "name": "60 Minutes 1-on-1 Confidential Consultation",
+              "description": "60 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 30000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917772603",
+              "name": "90 Minutes 1-on-1 Confidential Consultation",
+              "description": "90 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 45000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786917872477_f9qse",
+      "timestamp": "2026-08-16T22:04:32.477Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merk.payouts@merkmorassi.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": false,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "30 Minutes 1-on-1 Confidential Consultation",
+              "description": "30 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917722504",
+              "name": "60 Minutes 1-on-1 Confidential Consultation",
+              "description": "60 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 30000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917772603",
+              "name": "90 Minutes 1-on-1 Confidential Consultation",
+              "description": "90 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 45000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786917763789_g1nh3",
+      "timestamp": "2026-08-16T22:02:43.789Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merk.payouts@merkmorassi.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": false,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "1-on-1 Confidential Consultation",
+              "description": "30 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            },
+            {
+              "id": "srv_1786917722504",
+              "name": "1-on-1 Confidential Consultation",
+              "description": "60 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 30000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786917713935_078yh",
+      "timestamp": "2026-08-16T22:01:53.935Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merk.payouts@merkmorassi.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": false,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "1-on-1 Confidential Consultation",
+              "description": "30 Minutes Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786916696093_qdxjf",
+      "timestamp": "2026-08-16T21:44:56.093Z",
+      "eventType": "ORDER_CREATED",
+      "operator": "provider",
+      "details": {
+        "action": "update_own_config",
+        "updated": {
+          "id": "prov_merk_001",
+          "name": "Merk Morassi",
+          "email": "merk@merkmorassi.com",
+          "payoutEmail": "merk.payouts@merkmorassi.com",
+          "facetimeHandle": "merk@merkmorassi.com",
+          "active": false,
+          "services": [
+            {
+              "id": "srv_1",
+              "name": "1-on-1 Confidential Consultation",
+              "description": "Direct double-blind paywalled FaceTime consultation session with Merk Morassi.",
+              "feeCents": 15000,
+              "currency": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit_1786907041405_oxxim",
+      "timestamp": "2026-08-16T19:04:01.405Z",
+      "eventType": "ENTITLEMENT_CREATED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "token": "gk_tok_41fbb143ba07b0a5132dcd43fee648c531e72666fd5eac9d",
+        "expiresAt": "2026-08-17T19:04:01.376Z"
+      }
+    },
+    {
+      "id": "audit_1786907041375_i3mrl",
+      "timestamp": "2026-08-16T19:04:01.375Z",
+      "eventType": "PAYOUT_SUCCEEDED",
+      "operator": "paypal_payouts",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "payoutId": "GK-ord_pay_race_1786907041351-PROVIDER",
+        "batchId": "sb_batch_1786907041374"
+      }
+    },
+    {
+      "id": "audit_1786907041373_a5cri",
+      "timestamp": "2026-08-16T19:04:01.373Z",
+      "eventType": "PAYOUT_REQUESTED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "payoutId": "GK-ord_pay_race_1786907041351-PROVIDER",
+        "recipientEmail": "merk.payouts@merkmorassi.com",
+        "amountCents": 12750
+      }
+    },
+    {
+      "id": "audit_1786907041373_p14rs",
+      "timestamp": "2026-08-16T19:04:01.373Z",
+      "eventType": "SETTLEMENT_CREATED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "grossCents": 15000,
+        "providerCents": 12750,
+        "agentCents": 2250
+      }
+    },
+    {
+      "id": "audit_1786907041372_p0r2o",
+      "timestamp": "2026-08-16T19:04:01.372Z",
+      "eventType": "PAYMENT_VERIFIED",
+      "operator": "paypal_server",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "paypalCaptureId": "cap_sb_wl0w959"
+      }
+    },
+    {
+      "id": "audit_1786907041357_azznn",
+      "timestamp": "2026-08-16T19:04:01.358Z",
+      "eventType": "PAYMENT_CREATED",
+      "operator": "client",
+      "details": {
+        "orderId": "ord_pay_race_1786907041351",
+        "paypalOrderId": "pp_ord_pay_race_1786907041351"
+      }
+    },
+    {
+      "id": "audit_1786907041347_n5mi9",
+      "timestamp": "2026-08-16T19:04:01.347Z",
+      "eventType": "ENTITLEMENT_REDEEMED",
+      "operator": "client_scanner",
+      "details": {
+        "token": "gk_tok_ab9fd06c09dd503b0225f5e35dc6ff5721c97cd9d80e18cd",
+        "orderId": "ord_race_01",
+        "redeemedAt": "2026-08-16T19:04:01.346Z"
+      }
+    },
+    {
+      "id": "audit_1786907041266_zn4zh",
+      "timestamp": "2026-08-16T19:04:01.267Z",
+      "eventType": "ESCROW_ACCESSED",
+      "operator": "agent_operator_01",
+      "details": {
+        "ticketCode": "TICKET-DISPUTE-9902",
+        "reason": "Valid authorized dispute resolution justification for escrow unmasking",
+        "orderId": "ord_test_1786907040826",
+        "expiresAt": "2026-08-16T19:19:01.266Z"
+      },
+      "ticketCode": "TICKET-DISPUTE-9902"
+    },
+    {
+      "id": "audit_1786905927721_r5a5l",
+      "timestamp": "2026-08-16T18:45:27.721Z",
+      "eventType": "ENTITLEMENT_CREATED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "token": "gk_tok_d93a3661c14f97afdef888788ed555b866bc731b5c2430a1",
+        "expiresAt": "2026-08-17T18:45:27.694Z"
+      }
+    },
+    {
+      "id": "audit_1786905927694_t22dz",
+      "timestamp": "2026-08-16T18:45:27.694Z",
+      "eventType": "PAYOUT_SUCCEEDED",
+      "operator": "paypal_payouts",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "payoutId": "GK-ord_pay_race_1786905927679-PROVIDER",
+        "batchId": "sb_batch_1786905927693"
+      }
+    },
+    {
+      "id": "audit_1786905927693_fan0j",
+      "timestamp": "2026-08-16T18:45:27.693Z",
+      "eventType": "PAYOUT_REQUESTED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "payoutId": "GK-ord_pay_race_1786905927679-PROVIDER",
+        "recipientEmail": "merk.payouts@merkmorassi.com",
+        "amountCents": 12750
+      }
+    },
+    {
+      "id": "audit_1786905927693_7m6fc",
+      "timestamp": "2026-08-16T18:45:27.693Z",
+      "eventType": "SETTLEMENT_CREATED",
+      "operator": "system",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "grossCents": 15000,
+        "providerCents": 12750,
+        "agentCents": 2250
+      }
+    },
+    {
+      "id": "audit_1786905927692_f8lgl",
+      "timestamp": "2026-08-16T18:45:27.692Z",
+      "eventType": "PAYMENT_VERIFIED",
+      "operator": "paypal_server",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "paypalCaptureId": "cap_sb_ptdoq2y"
+      }
+    },
+    {
+      "id": "audit_1786905927688_mw6r2",
+      "timestamp": "2026-08-16T18:45:27.688Z",
+      "eventType": "PAYMENT_CREATED",
+      "operator": "client",
+      "details": {
+        "orderId": "ord_pay_race_1786905927679",
+        "paypalOrderId": "pp_ord_pay_race_1786905927679"
+      }
+    },
+    {
+      "id": "audit_1786905927672_18qox",
+      "timestamp": "2026-08-16T18:45:27.672Z",
+      "eventType": "ENTITLEMENT_REDEEMED",
+      "operator": "client_scanner",
+      "details": {
+        "token": "gk_tok_1676e70ed676bc0fa1d9468b1868f53088595f4323e41567",
+        "orderId": "ord_race_01",
+        "redeemedAt": "2026-08-16T18:45:27.632Z"
+      }
+    },
+    {
+      "id": "audit_1786905927578_1c44c",
+      "timestamp": "2026-08-16T18:45:27.578Z",
+      "eventType": "ESCROW_ACCESSED",
+      "operator": "agent_operator_01",
+      "details": {
+        "ticketCode": "TICKET-DISPUTE-9902",
+        "reason": "Valid authorized dispute resolution justification for escrow unmasking",
+        "orderId": "ord_test_1786905927006",
+        "expiresAt": "2026-08-16T19:00:27.577Z"
+      },
+      "ticketCode": "TICKET-DISPUTE-9902"
+    }
+  ],
+  "escrowSessions": {
+    "TICKET-DISPUTE-9902": {
+      "ticketCode": "TICKET-DISPUTE-9902",
+      "operator": "agent_operator_01",
+      "reason": "Valid authorized dispute resolution justification for escrow unmasking",
+      "issuedAt": "2026-08-16T19:04:01.266Z",
+      "expiresAt": "2026-08-16T19:19:01.266Z",
+      "active": true,
+      "orderId": "ord_test_1786907040826",
+      "maskedClientEmail": "cl***@example.com",
+      "unmaskedClientEmail": "client.sandbox@example.com",
+      "providerEmail": "merk@merkmorassi.com"
+    }
+  },
+  "gates": {
+    "gate_1786916654373_xgh8h": {
+      "id": "gate_1786916654373_xgh8h",
+      "providerId": "prov_merk_001",
+      "name": "Marketing Link 1",
+      "token": "gk_tok_1118a021bb70cfd56e5bf5c53f28242c977df19779956927",
+      "active": true,
+      "createdAt": "2026-08-16T21:44:14.373Z"
+    },
+    "gate_1786917885150_90im1": {
+      "id": "gate_1786917885150_90im1",
+      "providerId": "prov_merk_001",
+      "name": "Marketing Link 2",
+      "token": "gk_tok_711116706a333da283cb7cc86b5e0b4596b7c1645b965800",
+      "active": true,
+      "createdAt": "2026-08-16T22:04:45.150Z"
+    }
+  },
+  "authSessions": {
+    "5229362732aca0ffb92b8869420ac7723e5279e88ab66c7357c8386758114226": {
+      "token": "5229362732aca0ffb92b8869420ac7723e5279e88ab66c7357c8386758114226",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:19:33.235Z",
+      "expiresAt": "2026-08-17T09:19:33.235Z"
+    },
+    "7195653cfd92a055c2ed6c3553c08f777877d7c8ee075e12fe1c5ed19f71708c": {
+      "token": "7195653cfd92a055c2ed6c3553c08f777877d7c8ee075e12fe1c5ed19f71708c",
+      "role": "admin",
+      "createdAt": "2026-08-16T21:20:07.969Z",
+      "expiresAt": "2026-08-17T09:20:07.969Z"
+    },
+    "c30290152b3464c5eb7547d2e5552feba1112e2d8e7e5cbbc0bfe1b4008c6952": {
+      "token": "c30290152b3464c5eb7547d2e5552feba1112e2d8e7e5cbbc0bfe1b4008c6952",
+      "role": "admin",
+      "createdAt": "2026-08-16T21:20:35.543Z",
+      "expiresAt": "2026-08-17T09:20:35.543Z"
+    },
+    "ca839a27f30d5d9c05bef0ac815b687b3b832c0c8634a6e5bdaa659e5ca2f4cc": {
+      "token": "ca839a27f30d5d9c05bef0ac815b687b3b832c0c8634a6e5bdaa659e5ca2f4cc",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:23:28.009Z",
+      "expiresAt": "2026-08-17T09:23:28.009Z"
+    },
+    "068d28fa1e2fd866c6611d97dfeecbda7a7e13aba0b311356942e013317f5be1": {
+      "token": "068d28fa1e2fd866c6611d97dfeecbda7a7e13aba0b311356942e013317f5be1",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:24:15.953Z",
+      "expiresAt": "2026-08-17T09:24:15.953Z"
+    },
+    "6c43033160de22cf7f81412dc0dbc9e3633d31450c72fde8c0fabb05bd47d48f": {
+      "token": "6c43033160de22cf7f81412dc0dbc9e3633d31450c72fde8c0fabb05bd47d48f",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:27:51.844Z",
+      "expiresAt": "2026-08-17T09:27:51.845Z"
+    },
+    "8fa9cebe6fd0cdc6a0c650d19585f2b9c9ff5f46717e9c39a863761d3b0046b8": {
+      "token": "8fa9cebe6fd0cdc6a0c650d19585f2b9c9ff5f46717e9c39a863761d3b0046b8",
+      "role": "admin",
+      "createdAt": "2026-08-16T21:28:01.982Z",
+      "expiresAt": "2026-08-17T09:28:01.982Z"
+    },
+    "f3b025f44311a7d90b60d373ea137c28a2abac3ad60b6f37dfbf7e7c16cccf29": {
+      "token": "f3b025f44311a7d90b60d373ea137c28a2abac3ad60b6f37dfbf7e7c16cccf29",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:30:57.887Z",
+      "expiresAt": "2026-08-17T09:30:57.887Z"
+    },
+    "8f80b931ab20328a38aa9566adb928c725706e1fdf2f086af264b615ba259451": {
+      "token": "8f80b931ab20328a38aa9566adb928c725706e1fdf2f086af264b615ba259451",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:34:05.251Z",
+      "expiresAt": "2026-08-17T09:34:05.251Z"
+    },
+    "7862275052f4c08fd2964e5323c498da8204377e408b47223bc8e3945f61b95b": {
+      "token": "7862275052f4c08fd2964e5323c498da8204377e408b47223bc8e3945f61b95b",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:35:23.803Z",
+      "expiresAt": "2026-08-17T09:35:23.803Z"
+    },
+    "e3cce9d8c14b7e8dfbc7a4ca6e0685cd9ce1c4ee4a14b5e808e7ef5d936c135c": {
+      "token": "e3cce9d8c14b7e8dfbc7a4ca6e0685cd9ce1c4ee4a14b5e808e7ef5d936c135c",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:36:29.810Z",
+      "expiresAt": "2026-08-17T09:36:29.810Z"
+    },
+    "6303b814e69556763999b52b0330e9c476a9086eb77de35ee9f1b6c47a5526fd": {
+      "token": "6303b814e69556763999b52b0330e9c476a9086eb77de35ee9f1b6c47a5526fd",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:38:53.214Z",
+      "expiresAt": "2026-08-17T09:38:53.215Z"
+    },
+    "bc0e2408bbeeb79c57d15a8c24009525943a2bd1b4c3afc3711b41bb0647d077": {
+      "token": "bc0e2408bbeeb79c57d15a8c24009525943a2bd1b4c3afc3711b41bb0647d077",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:40:09.365Z",
+      "expiresAt": "2026-08-17T09:40:09.365Z"
+    },
+    "60f31c3e597985c77a32e8e45946f162652668d925c70a2326de7145d3ead728": {
+      "token": "60f31c3e597985c77a32e8e45946f162652668d925c70a2326de7145d3ead728",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:40:34.310Z",
+      "expiresAt": "2026-08-17T09:40:34.310Z"
+    },
+    "413f109cd1af3b2810c977f114d3658795a0f3cbb05d8448412948d1636b1cd2": {
+      "token": "413f109cd1af3b2810c977f114d3658795a0f3cbb05d8448412948d1636b1cd2",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:41:41.960Z",
+      "expiresAt": "2026-08-17T09:41:41.960Z"
+    },
+    "5524e4d2eb92949d5dd158f18d1b95d148332cfc3426ff6189eb90eabdb6c1df": {
+      "token": "5524e4d2eb92949d5dd158f18d1b95d148332cfc3426ff6189eb90eabdb6c1df",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:44:04.170Z",
+      "expiresAt": "2026-08-17T09:44:04.170Z"
+    },
+    "919b01495dd096015d6987e1199080d620ac271cde240851855d03215d3acb4e": {
+      "token": "919b01495dd096015d6987e1199080d620ac271cde240851855d03215d3acb4e",
+      "role": "admin",
+      "createdAt": "2026-08-16T21:45:16.229Z",
+      "expiresAt": "2026-08-17T09:45:16.229Z"
+    },
+    "c11fea47a7bead09104f3edb14e79c169a7101aa4b2ee012900e78a51346c818": {
+      "token": "c11fea47a7bead09104f3edb14e79c169a7101aa4b2ee012900e78a51346c818",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-16T21:49:20.057Z",
+      "expiresAt": "2026-08-17T09:49:20.057Z"
+    },
+    "46f7999210a19e1cf617a84f27414e52acf622043aed291d683620aac3c30e5f": {
+      "token": "46f7999210a19e1cf617a84f27414e52acf622043aed291d683620aac3c30e5f",
+      "role": "admin",
+      "createdAt": "2026-08-16T22:00:43.820Z",
+      "expiresAt": "2026-08-17T10:00:43.820Z"
+    }
+  }
+}
