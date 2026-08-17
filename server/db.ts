@@ -282,6 +282,15 @@ class Database {
     );
   }
 
+  deleteGate(id: string): boolean {
+    if (this.data.gates[id]) {
+      delete this.data.gates[id];
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
   // Auth Sessions
   saveAuthSession(session: AuthSession): AuthSession {
     this.data.authSessions[session.token] = session;

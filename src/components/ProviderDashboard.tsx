@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, CheckCircle2, RefreshCw, Power, Mail, Video, QrCode, Copy, Trash2, Plus, Clock, AlertCircle, Check, Download, ExternalLink, X } from 'lucide-react';
+import { Settings, CheckCircle2, RefreshCw, Power, Mail, Video, QrCode, Copy, Trash2, Plus, Clock, AlertCircle, Check, Download, ExternalLink, X, Edit3 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { ProviderConfig, Order, Gate, ServiceDefinition } from '../types';
 
@@ -12,6 +12,11 @@ export const ProviderDashboard: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string, type: 'info' | 'error' } | null>(null);
+
+  // Gate management state
+  const [newGateCustomName, setNewGateCustomName] = useState('');
+  const [editingGateId, setEditingGateId] = useState<string | null>(null);
+  const [editingGateName, setEditingGateName] = useState('');
 
   // Field level status indicators
   const [fieldStatuses, setFieldStatuses] = useState<Record<string, 'idle' | 'dirty' | 'saving' | 'saved' | 'error'>>({});
@@ -172,17 +177,19 @@ export const ProviderDashboard: React.FC = () => {
     }
   };
 
-  const handleGenerateGate = async (name?: string) => {
+  const handleGenerateGate = async (customName?: string) => {
     setGeneratingGate(true);
+    const nameToUse = customName || newGateCustomName.trim() || `Marketing Link ${gates.length + 1}`;
     try {
       const res = await fetch('/api/gates/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name: nameToUse })
       });
       const data = await res.json();
       if (data.success) {
-        setGateNotice('New marketing gate generated ✓');
+        setNewGateCustomName('');
+        setGateNotice(`New marketing gate "${nameToUse}" generated ✓`);
         setTimeout(() => setGateNotice(null), 3000);
         fetchData();
       } else {
@@ -192,6 +199,70 @@ export const ProviderDashboard: React.FC = () => {
       setMessage({ text: 'Error generating gate: ' + err.message, type: 'error' });
     } finally {
       setGeneratingGate(false);
+    }
+  };
+
+  const handleToggleGateActive = async (id: string, currentActive: boolean) => {
+    try {
+      const res = await fetch(`/api/gates/${id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !currentActive }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGateNotice(`Gate status updated to ${!currentActive ? 'Active' : 'Inactive'} ✓`);
+        setTimeout(() => setGateNotice(null), 3000);
+        fetchData();
+      } else {
+        setMessage({ text: data.error || 'Failed to update gate status', type: 'error' });
+      }
+    } catch (err: any) {
+      setMessage({ text: 'Error updating gate: ' + err.message, type: 'error' });
+    }
+  };
+
+  const handleUpdateGateName = async (id: string) => {
+    if (!editingGateName.trim()) return;
+    try {
+      const res = await fetch(`/api/gates/${id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editingGateName.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditingGateId(null);
+        setEditingGateName('');
+        setGateNotice('Marketing gate renamed ✓');
+        setTimeout(() => setGateNotice(null), 3000);
+        fetchData();
+      } else {
+        setMessage({ text: data.error || 'Failed to rename gate', type: 'error' });
+      }
+    } catch (err: any) {
+      setMessage({ text: 'Error renaming gate: ' + err.message, type: 'error' });
+    }
+  };
+
+  const handleDeleteGate = async (id: string, gateName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${gateName}"? Any client entry links using this gate token will no longer work.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/gates/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGateNotice(`Marketing gate "${gateName}" deleted ✓`);
+        setTimeout(() => setGateNotice(null), 3000);
+        fetchData();
+      } else {
+        setMessage({ text: data.error || 'Failed to delete marketing gate', type: 'error' });
+      }
+    } catch (err: any) {
+      setMessage({ text: 'Error deleting gate: ' + err.message, type: 'error' });
     }
   };
 
@@ -563,59 +634,155 @@ export const ProviderDashboard: React.FC = () => {
         </div>
       </form>
 
-      {/* Gates Management */}
+      {/* Gates Management (Full CRUD) */}
       <div className="bg-surface-a0 border border-surface-a10 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 className="text-sm font-semibold text-theme-light flex items-center space-x-2">
-          <QrCode className="w-4 h-4 text-info-a0" />
-          <span>Marketing Gates (Client Entry Links)</span>
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-surface-a10 gap-2">
+          <h2 className="text-sm font-semibold text-theme-light flex items-center space-x-2">
+            <QrCode className="w-4 h-4 text-info-a0" />
+            <span>Marketing Gates (Client Entry Links)</span>
+          </h2>
+          <span className="text-[10px] font-mono text-surface-a40">
+            {gates.length} Gate{gates.length !== 1 ? 's' : ''} Configured
+          </span>
+        </div>
 
-        <div className="flex pb-2">
+        {/* Create Gate Form */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <input
+            type="text"
+            value={newGateCustomName}
+            onChange={(e) => setNewGateCustomName(e.target.value)}
+            placeholder={`Campaign Name (e.g., "Instagram Promo Link")...`}
+            className="flex-1 bg-tonal-a0 border border-surface-a10 rounded-xl px-3.5 py-2 text-xs font-mono text-theme-light focus:outline-none focus:border-info-a0"
+          />
           <button
-            onClick={() => handleGenerateGate(`Marketing Link ${gates.length + 1}`)}
+            onClick={() => handleGenerateGate()}
             disabled={generatingGate}
-            className="px-4 py-2 bg-tonal-a0 hover:bg-surface-a10 border border-surface-a20 text-xs font-medium rounded-lg text-theme-light transition-all flex items-center disabled:opacity-50"
+            className="px-4 py-2 bg-info-a0 hover:bg-info-a10 text-primary-a0 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 flex-shrink-0"
           >
             {generatingGate ? (
-              <RefreshCw className="w-3 h-3 mr-2 animate-spin text-info-a0" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Plus className="w-3 h-3 mr-2 text-info-a0" />
+              <Plus className="w-3.5 h-3.5" />
             )}
-            <span>Generate New Marketing Gate</span>
+            <span>Generate Marketing Gate</span>
           </button>
         </div>
 
         {gates.length === 0 ? (
-          <p className="text-xs text-surface-a40 font-mono py-4 text-center">No active gates.</p>
+          <p className="text-xs text-surface-a40 font-mono py-6 text-center bg-tonal-a0/50 rounded-xl border border-surface-a10/50">
+            No marketing gates generated yet. Create one above to issue client entry links.
+          </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             {gates.map(gate => {
               const gateUrl = `${window.location.origin}/#gate=${gate.token}`;
+              const isEditingThisGate = editingGateId === gate.id;
+
               return (
-                <div key={gate.id} className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10 text-xs font-mono space-y-2">
-                  <div className="flex justify-between items-center text-theme-light font-bold">
-                    <span>{gate.name || gate.id}</span>
+                <div key={gate.id} className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10 text-xs font-mono space-y-2.5 transition-all hover:border-surface-a20">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-surface-a10/60">
+                    <div className="flex items-center space-x-2 flex-1">
+                      {isEditingThisGate ? (
+                        <div className="flex items-center space-x-1.5 flex-1 max-w-sm">
+                          <input
+                            type="text"
+                            value={editingGateName}
+                            onChange={(e) => setEditingGateName(e.target.value)}
+                            className="bg-surface-a0 border border-info-a0 rounded px-2.5 py-1 text-xs text-theme-light focus:outline-none flex-1 font-mono"
+                            placeholder="Gate Name"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleUpdateGateName(gate.id)}
+                            className="p-1 bg-success-a0/20 text-success-a0 rounded hover:bg-success-a0/30"
+                            title="Save Name"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingGateId(null);
+                              setEditingGateName('');
+                            }}
+                            className="p-1 bg-surface-a20 text-surface-a40 rounded hover:text-theme-light"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-theme-light font-bold text-sm">
+                            {gate.name || gate.id}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setEditingGateId(gate.id);
+                              setEditingGateName(gate.name || '');
+                            }}
+                            className="p-1 text-surface-a40 hover:text-info-a0 transition-colors"
+                            title="Rename Gate"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      {/* Active/Inactive Toggle Pill */}
+                      <button
+                        onClick={() => handleToggleGateActive(gate.id, gate.active)}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all flex items-center space-x-1 border ${
+                          gate.active
+                            ? 'bg-success-a0/10 text-success-a0 border-success-a0/30 hover:bg-success-a0/20'
+                            : 'bg-surface-a20 text-surface-a40 border-surface-a30 hover:bg-surface-a30'
+                        }`}
+                        title="Click to toggle Active status"
+                      >
+                        <Power className="w-3 h-3" />
+                        <span>{gate.active ? 'Active' : 'Inactive'}</span>
+                      </button>
+
+                      {/* Delete Gate Button */}
+                      <button
+                        onClick={() => handleDeleteGate(gate.id, gate.name || gate.id)}
+                        className="p-1 text-surface-a40 hover:text-danger-a0 hover:bg-danger-a0/10 rounded transition-colors"
+                        title="Delete Marketing Gate"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-surface-a40 text-[10px]">Gate ID: {gate.id} • Created: {new Date(gate.createdAt).toLocaleString()}</div>
-                  <div className="flex items-center space-x-2 mt-2">
+
+                  <div className="text-surface-a40 text-[10px] flex items-center justify-between">
+                    <span>Gate ID: <code className="text-info-a0">{gate.id}</code></span>
+                    <span>Created: {new Date(gate.createdAt).toLocaleString()}</span>
+                  </div>
+
+                  {/* URL Payload & Actions */}
+                  <div className="flex items-center space-x-2 mt-2 pt-1">
                     <input 
                       readOnly 
                       value={gateUrl} 
-                      className="flex-1 bg-surface-a0 border border-surface-a10 rounded px-2 py-1.5 text-[10px] text-surface-a50"
+                      className="flex-1 bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-[10px] text-surface-a50 font-mono truncate"
                     />
                     <button
                       onClick={() => copyToClipboard(gateUrl)}
-                      className="p-1.5 bg-info-a0/10 text-info-a0 rounded hover:bg-info-a0/20 transition-colors"
+                      className="px-2.5 py-1.5 bg-info-a0/10 hover:bg-info-a0/20 text-info-a0 border border-info-a0/20 rounded-lg transition-colors flex items-center space-x-1"
                       title="Copy URL"
                     >
                       <Copy className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline text-[10px]">Copy</span>
                     </button>
                     <button
                       onClick={() => handleGenerateGateQr(gate)}
-                      className="p-1.5 bg-info-a0/10 text-info-a0 rounded hover:bg-info-a0/20 transition-colors flex items-center space-x-1"
+                      className="px-2.5 py-1.5 bg-info-a0/10 hover:bg-info-a0/20 text-info-a0 border border-info-a0/20 rounded-lg transition-colors flex items-center space-x-1"
                       title="Issue QR Code"
                     >
                       <QrCode className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline text-[10px]">QR Code</span>
                     </button>
                   </div>
                 </div>

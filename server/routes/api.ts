@@ -187,6 +187,46 @@ apiRouter.post('/gates/create', requireProviderAuth, (req: Request, res: Respons
   res.json({ success: true, gateToken: gate.token });
 });
 
+// 1c. Gate Update (Provider Only)
+apiRouter.post('/gates/:id/update', requireProviderAuth, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, active } = req.body;
+  const provider = db.getProvider();
+
+  const gate = db.getGate(id);
+  if (!gate) {
+    return res.status(404).json({ success: false, error: 'Gate not found.' });
+  }
+  if (gate.providerId !== provider.id) {
+    return res.status(403).json({ success: false, error: 'Gate provider mismatch.' });
+  }
+
+  if (name !== undefined) gate.name = String(name).trim();
+  if (active !== undefined) gate.active = Boolean(active);
+
+  db.saveGate(gate);
+  db.logAuditEvent('GATE_UPDATED' as any, 'provider', { gateId: gate.id, name: gate.name, active: gate.active });
+  res.json({ success: true, gate });
+});
+
+// 1d. Gate Delete (Provider Only)
+apiRouter.delete('/gates/:id', requireProviderAuth, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const provider = db.getProvider();
+
+  const gate = db.getGate(id);
+  if (!gate) {
+    return res.status(404).json({ success: false, error: 'Gate not found.' });
+  }
+  if (gate.providerId !== provider.id) {
+    return res.status(403).json({ success: false, error: 'Gate provider mismatch.' });
+  }
+
+  db.deleteGate(id);
+  db.logAuditEvent('GATE_DELETED' as any, 'provider', { gateId: id });
+  res.json({ success: true, message: 'Marketing Gate deleted successfully.' });
+});
+
 // 2. Create Order (MUST be derived from Gate!)
 apiRouter.post('/orders/create', (req: Request, res: Response) => {
   try {
