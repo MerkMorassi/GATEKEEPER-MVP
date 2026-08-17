@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { createServer as createViteServer } from 'vite';
@@ -9,7 +10,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -17,6 +18,12 @@ async function startServer() {
 
   // API Routes FIRST
   app.use('/api', apiRouter);
+
+  // Static public assets fallback
+  const publicPath = path.join(process.cwd(), 'public');
+  if (fs.existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+  }
 
   // Development vs Production static/Vite middleware
   if (process.env.NODE_ENV !== 'production') {

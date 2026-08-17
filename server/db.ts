@@ -13,8 +13,9 @@ import {
   AuthSession,
 } from '../src/types/index.js';
 
-const DATA_FILE = path.join(process.cwd(), 'gatekeeper_db.json');
-const TEMP_FILE = path.join(process.cwd(), 'gatekeeper_db.json.tmp');
+const DATA_DIR = process.env.DATA_DIR || process.cwd();
+const DATA_FILE = path.join(DATA_DIR, 'gatekeeper_db.json');
+const TEMP_FILE = path.join(DATA_DIR, 'gatekeeper_db.json.tmp');
 
 interface Schema {
   provider: ProviderConfig;
