@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { db, lockManager } from '../db.js';
@@ -145,6 +147,18 @@ apiRouter.get('/config', (req: Request, res: Response) => {
       payoutEmailConfigured: Boolean(provider.payoutEmail),
     },
   });
+});
+
+// Download full source archive endpoint
+apiRouter.get('/download-source', (req: Request, res: Response) => {
+  const archivePath = path.join(process.cwd(), 'public', 'gatekeeper-source.tar.gz');
+  if (fs.existsSync(archivePath)) {
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="gatekeeper-source.tar.gz"');
+    res.sendFile(archivePath);
+  } else {
+    res.status(404).json({ success: false, error: 'Source archive not ready.' });
+  }
 });
 
 // 1a. Gate Resolution
