@@ -29,6 +29,15 @@ interface Schema {
   authSessions: Record<string, AuthSession>;
 }
 
+const DEFAULT_GATE: Gate = {
+  id: 'gate_default_001',
+  providerId: 'prov_merk_001',
+  name: 'Primary Consultation Gate',
+  token: 'merk_consultation_gate',
+  active: true,
+  createdAt: '2026-08-16T00:00:00.000Z',
+};
+
 const DEFAULT_PROVIDER: ProviderConfig = {
   id: 'prov_merk_001',
   name: 'Merk Morassi',
@@ -96,6 +105,11 @@ class Database {
           mergedProvider.services = DEFAULT_PROVIDER.services;
         }
 
+        const gates = parsed.gates || {};
+        if (Object.keys(gates).length === 0) {
+          gates[DEFAULT_GATE.id] = DEFAULT_GATE;
+        }
+
         return {
           provider: mergedProvider,
           orders: parsed.orders || {},
@@ -105,7 +119,7 @@ class Database {
           entitlements: parsed.entitlements || {},
           auditEvents: parsed.auditEvents || [],
           escrowSessions: parsed.escrowSessions || {},
-          gates: parsed.gates || {},
+          gates,
           authSessions: parsed.authSessions || {}
         };
       } catch (e: any) {
@@ -124,7 +138,9 @@ class Database {
       entitlements: {},
       auditEvents: [],
       escrowSessions: {},
-      gates: {},
+      gates: {
+        [DEFAULT_GATE.id]: DEFAULT_GATE,
+      },
       authSessions: {},
     };
     this.saveData(initial);
