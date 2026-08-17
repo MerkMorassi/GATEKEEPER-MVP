@@ -693,6 +693,14 @@
       "token": "gk_tok_711116706a333da283cb7cc86b5e0b4596b7c1645b965800",
       "active": true,
       "createdAt": "2026-08-16T22:04:45.150Z"
+    },
+    "gate_1786927709045_dmacd": {
+      "id": "gate_1786927709045_dmacd",
+      "providerId": "prov_merk_001",
+      "name": "Marketing Link 3",
+      "token": "gk_tok_9b7ce38f7c72406d669cf874c80840024a00260995428aba",
+      "active": true,
+      "createdAt": "2026-08-17T00:48:29.045Z"
     }
   },
   "authSessions": {
@@ -823,6 +831,13 @@
       "role": "admin",
       "createdAt": "2026-08-16T22:00:43.820Z",
       "expiresAt": "2026-08-17T10:00:43.820Z"
+    },
+    "eb2c519b3641acbf2fecdea5576e0f9c6de94be7eaf9c0d748804cf03123ba46": {
+      "token": "eb2c519b3641acbf2fecdea5576e0f9c6de94be7eaf9c0d748804cf03123ba46",
+      "role": "provider",
+      "providerId": "prov_merk_001",
+      "createdAt": "2026-08-17T00:47:35.945Z",
+      "expiresAt": "2026-08-17T12:47:35.945Z"
     }
   }
 }

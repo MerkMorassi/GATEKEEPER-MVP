@@ -17,6 +17,7 @@ export const ProviderDashboard: React.FC = () => {
   const [newGateCustomName, setNewGateCustomName] = useState('');
   const [editingGateId, setEditingGateId] = useState<string | null>(null);
   const [editingGateName, setEditingGateName] = useState('');
+  const [deletingGateId, setDeletingGateId] = useState<string | null>(null);
 
   // Field level status indicators
   const [fieldStatuses, setFieldStatuses] = useState<Record<string, 'idle' | 'dirty' | 'saving' | 'saved' | 'error'>>({});
@@ -246,13 +247,16 @@ export const ProviderDashboard: React.FC = () => {
   };
 
   const handleDeleteGate = async (id: string, gateName: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${gateName}"? Any client entry links using this gate token will no longer work.`)) {
-      return;
-    }
+    // Immediate optimistic state update
+    setGates(prev => prev.filter(g => g.id !== id));
+    setDeletingGateId(null);
+
     try {
-      const res = await fetch(`/api/gates/${id}`, {
-        method: 'DELETE',
-      });
+      // Attempt DELETE endpoint first, with fallback to POST /delete
+      let res = await fetch(`/api/gates/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        res = await fetch(`/api/gates/${id}/delete`, { method: 'POST' });
+      }
       const data = await res.json();
       if (data.success) {
         setGateNotice(`Marketing gate "${gateName}" deleted ✓`);
@@ -260,9 +264,11 @@ export const ProviderDashboard: React.FC = () => {
         fetchData();
       } else {
         setMessage({ text: data.error || 'Failed to delete marketing gate', type: 'error' });
+        fetchData(); // Rollback if failed
       }
     } catch (err: any) {
       setMessage({ text: 'Error deleting gate: ' + err.message, type: 'error' });
+      fetchData(); // Rollback on error
     }
   };
 
@@ -745,14 +751,33 @@ export const ProviderDashboard: React.FC = () => {
                         <span>{gate.active ? 'Active' : 'Inactive'}</span>
                       </button>
 
-                      {/* Delete Gate Button */}
-                      <button
-                        onClick={() => handleDeleteGate(gate.id, gate.name || gate.id)}
-                        className="p-1 text-surface-a40 hover:text-danger-a0 hover:bg-danger-a0/10 rounded transition-colors"
-                        title="Delete Marketing Gate"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Delete Gate Action with Inline Confirm */}
+                      {deletingGateId === gate.id ? (
+                        <div className="flex items-center space-x-1 animate-fadeIn">
+                          <button
+                            onClick={() => handleDeleteGate(gate.id, gate.name || gate.id)}
+                            className="px-2 py-0.5 bg-danger-a0 text-theme-light text-[10px] font-bold rounded hover:bg-danger-a10 transition-colors flex items-center space-x-1"
+                            title="Confirm Permanent Deletion"
+                          >
+                            <span>Delete?</span>
+                          </button>
+                          <button
+                            onClick={() => setDeletingGateId(null)}
+                            className="p-1 text-surface-a40 hover:text-theme-light rounded"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeletingGateId(gate.id)}
+                          className="p-1 text-surface-a40 hover:text-danger-a0 hover:bg-danger-a0/10 rounded transition-colors"
+                          title="Delete Marketing Gate"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

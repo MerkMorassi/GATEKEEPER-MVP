@@ -210,7 +210,7 @@ apiRouter.post('/gates/:id/update', requireProviderAuth, (req: Request, res: Res
 });
 
 // 1d. Gate Delete (Provider Only)
-apiRouter.delete('/gates/:id', requireProviderAuth, (req: Request, res: Response) => {
+const handleDeleteGateRoute = (req: Request, res: Response) => {
   const { id } = req.params;
   const provider = db.getProvider();
 
@@ -225,7 +225,10 @@ apiRouter.delete('/gates/:id', requireProviderAuth, (req: Request, res: Response
   db.deleteGate(id);
   db.logAuditEvent('GATE_DELETED' as any, 'provider', { gateId: id });
   res.json({ success: true, message: 'Marketing Gate deleted successfully.' });
-});
+};
+
+apiRouter.delete('/gates/:id', requireProviderAuth, handleDeleteGateRoute);
+apiRouter.post('/gates/:id/delete', requireProviderAuth, handleDeleteGateRoute);
 
 // 2. Create Order (MUST be derived from Gate!)
 apiRouter.post('/orders/create', (req: Request, res: Response) => {
