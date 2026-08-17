@@ -701,6 +701,14 @@
       "token": "gk_tok_9b7ce38f7c72406d669cf874c80840024a00260995428aba",
       "active": true,
       "createdAt": "2026-08-17T00:48:29.045Z"
+    },
+    "gate_1786930358420_tkgha": {
+      "id": "gate_1786930358420_tkgha",
+      "providerId": "prov_merk_001",
+      "name": "Marketing Link 4",
+      "token": "gk_tok_ec474890cd131d769858877897fcd72697045be77c5a81d8",
+      "active": true,
+      "createdAt": "2026-08-17T01:32:38.420Z"
     }
   },
   "authSessions": {

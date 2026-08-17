@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut, Sliders } from 'lucide-react';
+import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut, Sliders, Download } from 'lucide-react';
 
 interface HeaderProps {
   currentTab: 'portal' | 'client' | 'provider' | 'agent' | 'scanner';
@@ -92,6 +92,16 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, role, o
             <QrCode className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Gate</span>
           </button>
+
+          <a
+            href="/api/download-zip"
+            download="gatekeeper-latest.zip"
+            title="Download Complete Codebase (.ZIP)"
+            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium bg-info-a0/10 hover:bg-info-a0/20 text-info-a0 border border-info-a0/30 transition-all flex items-center space-x-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">ZIP</span>
+          </a>
 
           {role && onLogout && (
             <button

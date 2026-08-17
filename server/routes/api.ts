@@ -149,7 +149,21 @@ apiRouter.get('/config', (req: Request, res: Response) => {
   });
 });
 
-// Download full source archive endpoint
+// Download full source archive endpoints
+apiRouter.get('/download-zip', (req: Request, res: Response) => {
+  try {
+    const { execSync } = require('child_process');
+    const pythonCmd = `python3 -c "import os, zipfile; zip_filename = 'public/gatekeeper-latest.zip'; os.makedirs('public', exist_ok=True); ignored_dirs = {'.git', 'node_modules', 'dist', 'public', '.cache'}; zipf = zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED); [zipf.write(os.path.join(root, f), os.path.relpath(os.path.join(root, f), '.')) for root, dirs, files in os.walk('.') for f in files if not any(p in root for p in ignored_dirs) and not f.endswith(('.json.log', '.zip', '.tar.gz', 'gatekeeper_db.json'))]; zipf.close()"`;
+    execSync(pythonCmd);
+    const archivePath = path.join(process.cwd(), 'public', 'gatekeeper-latest.zip');
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="gatekeeper-latest.zip"');
+    res.sendFile(archivePath);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to create zip: ' + err.message });
+  }
+});
+
 apiRouter.get('/download-source', (req: Request, res: Response) => {
   const archivePath = path.join(process.cwd(), 'public', 'gatekeeper-source.tar.gz');
   if (fs.existsSync(archivePath)) {
