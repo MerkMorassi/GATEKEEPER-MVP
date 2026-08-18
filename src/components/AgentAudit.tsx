@@ -152,13 +152,13 @@ export const AgentAudit: React.FC = () => {
 
         <div className="bg-surface-a0 border border-surface-a10 p-5 rounded-2xl shadow-lg">
           <div className="flex items-center justify-between text-surface-a40 text-xs font-mono uppercase">
-            <span>Agent Share (15%)</span>
+            <span>Admin Agent Share (15%)</span>
             <ShieldCheck className="w-4 h-4 text-info-a0" />
           </div>
           <div className="text-2xl font-bold text-info-a0 mt-2">
             ${(data.totalAgentCents / 100).toFixed(2)}
           </div>
-          <p className="text-[10px] text-surface-a50 font-mono mt-1">Agency Platform Revenue</p>
+          <p className="text-[10px] text-surface-a50 font-mono mt-1">Admin Agent Platform Revenue</p>
         </div>
 
         <div className="bg-surface-a0 border border-surface-a10 p-5 rounded-2xl shadow-lg">
@@ -276,7 +276,7 @@ export const AgentAudit: React.FC = () => {
                   <th className="pb-3">Order ID</th>
                   <th className="pb-3">Gross</th>
                   <th className="pb-3">Provider Share (85%)</th>
-                  <th className="pb-3">Agent Share (15%)</th>
+                  <th className="pb-3">Admin Agent Share (15%)</th>
                   <th className="pb-3">Status</th>
                   <th className="pb-3">Timestamp</th>
                   <th className="pb-3 text-right">Escrow Break-Glass</th>

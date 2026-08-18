@@ -3,7 +3,7 @@ import { Shield, KeyRound, Lock, LayoutDashboard, AlertTriangle, ArrowRight, Use
 
 interface FlashPortalProps {
   currentRole: 'admin' | 'provider' | null;
-  onNavigate: (tab: 'client' | 'provider' | 'agent', role?: 'admin' | 'provider' | null) => void;
+  onNavigate: (tab: 'client' | 'provider' | 'agent' | 'sales', role?: 'admin' | 'provider' | null) => void;
 }
 
 export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigate }) => {
@@ -132,6 +132,33 @@ export const FlashPortal: React.FC<FlashPortalProps> = ({ currentRole, onNavigat
 
         {/* Right: Direct Portal Option Cards */}
         <div className="lg:col-span-7 grid grid-cols-1 gap-4 font-sans">
+          {/* Card 0: Client Sales Landing Page */}
+          <div 
+            onClick={() => onNavigate('sales', null)}
+            className="group cursor-pointer bg-surface-a0 hover:bg-tonal-a0 border-2 border-info-a0/40 hover:border-info-a0 rounded-2xl p-5 shadow-xl transition-all duration-200 flex items-start space-x-4 relative overflow-hidden"
+          >
+            <div className="p-3 bg-info-a0/20 text-info-a0 rounded-xl group-hover:scale-110 transition-transform">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-theme-light group-hover:text-info-a0 transition-colors">
+                  Client Sales & Booking Landing Page
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-info-a0/20 text-info-a0 border border-info-a0/30 font-bold">
+                  NEW • SALES PAGE
+                </span>
+              </div>
+              <p className="text-xs text-surface-a40 leading-relaxed">
+                Professional 1-on-1 FaceTime consultation landing page with marketing gate metadata, service tier breakdown, appointment scheduler, and secure PayPal booking.
+              </p>
+              <div className="pt-2 flex items-center text-xs font-semibold text-info-a0 group-hover:translate-x-1 transition-transform">
+                <span>View Client Sales Page</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </div>
+            </div>
+          </div>
+
           {/* Card 1: Client Portal */}
           <div 
             onClick={() => onNavigate('client', null)}

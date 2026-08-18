@@ -133,6 +133,19 @@ export class PayPalService {
     // Server-side Sandbox / Demonstration Mode when credentials are not yet set in environment.
     // Deterministic server verification to allow preview end-to-end sandbox execution.
     console.log(`[PayPal Server Sandbox] Verifying order ${paypalOrderId} for ${expectedAmountCents} cents.`);
+
+    if (paypalOrderId.includes('FAIL') || paypalOrderId.includes('FAILURE')) {
+      return {
+        success: false,
+        orderId: paypalOrderId,
+        captureId: '',
+        amountCents: 0,
+        currency: 'USD',
+        status: 'FAILED',
+        rawResponse: { mode: 'sandbox_demonstration_mock_failure' },
+      };
+    }
+
     return {
       success: true,
       orderId: paypalOrderId,

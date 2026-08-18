@@ -31,6 +31,11 @@ export interface Gate {
   token: string;
   active: boolean;
   createdAt: string;
+  targetServiceId?: string;
+  serviceDescription?: string;
+  expiryDate?: string;
+  promotionType?: string;
+  customGreeting?: string;
 }
 
 export interface AuthSession {
@@ -97,15 +102,36 @@ export interface Settlement {
   timestamp: string;
 }
 
+export type PayoutStatus =
+  | 'pending'
+  | 'created'
+  | 'approved'
+  | 'requested'
+  | 'completed'
+  | 'cancelled'
+  | 'deleted'
+  | 'expired'
+  | 'failed'
+  | 'submitted';
+
 export interface Payout {
   payoutId: string; // e.g., GK-{orderId}-PROVIDER
   orderId: string;
+  creatorId?: string; // e.g. prov_merk_001
+  settlementId?: string; // orderId or settlementId
   recipientEmail: string;
   amountCents: number;
   currency: string;
-  status: 'pending' | 'submitted' | 'completed' | 'failed';
+  status: PayoutStatus;
+  provider?: string; // e.g. 'talentir' | 'paypal_sandbox'
+  providerPayoutId?: string;
+  customId?: string; // Authoritative payout ID used for idempotency
+  providerFeeCents?: number;
   paypalBatchId?: string;
   timestamp: string;
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
 }
 
 export type EntitlementStatus =
@@ -129,11 +155,19 @@ export interface Entitlement {
 }
 
 export type AuditEventType =
+  | 'BOOKING_CREATED'
   | 'ORDER_CREATED'
+  | 'PAYMENT_AUTHORIZATION_REQUESTED'
+  | 'PAYMENT_AUTHORIZED'
+  | 'PAYMENT_CAPTURE_REQUESTED'
+  | 'PAYMENT_CAPTURED'
   | 'PAYMENT_CREATED'
   | 'PAYMENT_VERIFIED'
   | 'PAYMENT_FAILED'
+  | 'REFUND_REQUESTED'
+  | 'REFUND_COMPLETED'
   | 'SETTLEMENT_CREATED'
+  | 'SETTLEMENT_COMPLETED'
   | 'PAYOUT_REQUESTED'
   | 'PAYOUT_SUCCEEDED'
   | 'PAYOUT_FAILED'
@@ -141,9 +175,15 @@ export type AuditEventType =
   | 'ENTITLEMENT_REDEEMED'
   | 'ENTITLEMENT_REVOKED'
   | 'ENTITLEMENT_EXPIRED'
+  | 'HANDOFF_PREPARED'
+  | 'HANDOFF_EXECUTED'
+  | 'HANDOFF_COMPLETED'
+  | 'SUPPORT_CONTEXT_CREATED'
   | 'MANUAL_REVIEW_OPENED'
   | 'ESCROW_ACCESSED'
-  | 'ESCROW_EXPIRED';
+  | 'ESCROW_EXPIRED'
+  | 'GATE_UPDATED'
+  | 'GATE_DELETED';
 
 export interface AuditEvent {
   id: string;
@@ -153,6 +193,28 @@ export interface AuditEvent {
   details: Record<string, any>;
   ticketCode?: string;
 }
+
+export interface SupportContext {
+  id: string;
+  reasonCode: string;
+  sessionId: string; // opaque internal orderId / session ID
+  paymentId?: string;
+  recommendedAction: string;
+  identityAccessRequired: boolean;
+  refundAuthorized: boolean;
+  createdAt: string;
+}
+
+export type FrontendSessionState =
+  | 'BOOKING'
+  | 'PAYMENT_AUTHORIZING'
+  | 'PAYMENT_AUTHORIZED'
+  | 'ACCESS_READY'
+  | 'HANDOFF_READY'
+  | 'HANDOFF_IN_PROGRESS'
+  | 'HANDOFF_COMPLETE'
+  | 'EXCEPTION'
+  | 'SUPPORT_REQUIRED';
 
 export interface EscrowSession {
   ticketCode: string;

@@ -1,6 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, CheckCircle2, QrCode, Video, ExternalLink, RefreshCw, AlertCircle, ArrowRight, DollarSign, Clock } from 'lucide-react';
+import { Shield, Lock, CheckCircle2, QrCode, Video, ExternalLink, RefreshCw, AlertCircle, ArrowRight, DollarSign, Clock, Calendar, Ticket, Sparkles } from 'lucide-react';
 import { ProviderConfig, Order, Settlement, Entitlement } from '../types';
+
+export type HandoffStatus = 'HandoffPrepared' | 'HandoffExecuted' | 'HandoffCompleted' | 'HandoffFailed';
+
+const HANDOFF_MESSAGES: Record<
+  HandoffStatus,
+  {
+    title: string;
+    description: string;
+    architectureNote: string;
+    badgeStyle: string;
+  }
+> = {
+  HandoffPrepared: {
+    title: 'Handoff Prepared',
+    description: 'Payment authorized and single-use entitlement issued. Ready to initiate session handoff.',
+    architectureNote: 'GateKeeper has secured 85/15 fee settlement and generated your opaque access token. Click below to execute handoff.',
+    badgeStyle: 'bg-info-a0/10 border-info-a0/30 text-info-a0',
+  },
+  HandoffExecuted: {
+    title: 'Executing Handoff',
+    description: 'Verifying single-use credential and transferring session parameters server-side...',
+    architectureNote: 'Transitioning from GateKeeper authorization boundary to external provider session.',
+    badgeStyle: 'bg-warning-a0/10 border-warning-a0/30 text-warning-a0 animate-pulse',
+  },
+  HandoffCompleted: {
+    title: 'Controlled Handoff Completed',
+    description: 'Access credential redeemed and external session link unlocked.',
+    architectureNote: 'GateKeeper delivers access authorization and fee settlement. Media content is conducted directly over external provider channels without observation, telemetry logging, or recording.',
+    badgeStyle: 'bg-success-a0/10 border-success-a0/30 text-success-a0',
+  },
+  HandoffFailed: {
+    title: 'Handoff Rejected',
+    description: 'Single-use credential redemption failed or has already been consumed.',
+    architectureNote: 'Single-use boundary enforced. Check support context or request a fresh credential.',
+    badgeStyle: 'bg-danger-a0/10 border-danger-a0/30 text-danger-a0',
+  },
+};
 
 interface ClientCheckoutProps {
   onOrderCreated?: (order: Order) => void;
@@ -16,6 +53,13 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
 }) => {
   const [providerConfig, setProviderConfig] = useState<any | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [gateMeta, setGateMeta] = useState<{
+    promotionType?: string;
+    serviceDescription?: string;
+    expiryDate?: string;
+    isExpired?: boolean;
+    customGreeting?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +70,13 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [settlement, setSettlement] = useState<Settlement | null>(null);
   const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
+  const [handoffStatus, setHandoffStatus] = useState<'HandoffPrepared' | 'HandoffExecuted' | 'HandoffCompleted' | 'HandoffFailed' | null>(null);
+
+  // Appointment Scheduling State
+  const [clientTimezone, setClientTimezone] = useState<string>('UTC');
+  const [selectedAppointmentDate, setSelectedAppointmentDate] = useState<string>('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('02:00 PM');
+
   const [redemptionResult, setRedemptionResult] = useState<{
     redeemed: boolean;
     facetimeHandle?: string;
@@ -33,6 +84,23 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
     instruction?: string;
     error?: string;
   } | null>(null);
+
+  // Detect Client Timezone and default appointment date
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York';
+      setClientTimezone(tz);
+
+      // Default to tomorrow's date
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = tomorrow.toISOString().split('T')[0];
+      setSelectedAppointmentDate(dateStr);
+    } catch {
+      setClientTimezone('America/New_York');
+      setSelectedAppointmentDate('2026-08-18');
+    }
+  }, []);
 
   // Fetch provider config
   useEffect(() => {
@@ -54,14 +122,26 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
         const res = await fetch(`/api/gates/${activeGateFromHash}`);
         const data = await res.json();
         if (data.success && data.gate) {
+          setGateMeta({
+            promotionType: data.gate.promotionType,
+            serviceDescription: data.gate.serviceDescription,
+            expiryDate: data.gate.expiryDate,
+            isExpired: data.gate.isExpired,
+            customGreeting: data.gate.customGreeting,
+          });
           setProviderConfig({
             name: data.gate.providerName,
             services: data.gate.services,
-            active: true
+            active: true,
+            customGreeting: data.gate.customGreeting,
           });
+          if (data.gate.isExpired) {
+            setError(`This promotional offer expired on ${data.gate.expiryDate}. Please contact the provider for an updated link.`);
+          }
           if (data.gate.services && data.gate.services.length > 0) {
-            const matchedSvc = activeServiceFromHash
-              ? data.gate.services.find((s: any) => s.id === activeServiceFromHash)
+            const targetSvcId = activeServiceFromHash || data.gate.targetServiceId;
+            const matchedSvc = targetSvcId
+              ? data.gate.services.find((s: any) => s.id === targetSvcId)
               : null;
             setSelectedServiceId(matchedSvc ? matchedSvc.id : data.gate.services[0].id);
           }
@@ -110,6 +190,13 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
       const data = await res.json();
       if (data.success && data.entitlement) {
         setEntitlement(data.entitlement);
+        if (data.entitlement.status === 'redeemed') {
+          setHandoffStatus('HandoffCompleted');
+        } else if (data.entitlement.status === 'expired') {
+          setHandoffStatus('HandoffFailed');
+        } else {
+          setHandoffStatus('HandoffPrepared');
+        }
         setCheckoutStep('success');
       }
     } catch (err) {
@@ -133,7 +220,11 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
       const data = await res.json();
       if (data.success && data.order) {
         setCurrentOrder(data.order);
-        setCheckoutStep('paypal_modal');
+        if (data.order.amountCents === 0) {
+          await executePaymentVerification(data.order.id, 'FREE_ALIGNMENT_PASS');
+        } else {
+          setCheckoutStep('paypal_modal');
+        }
       } else {
         setError(data.error || 'Failed to initiate transaction');
       }
@@ -144,9 +235,7 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
     }
   };
 
-  // Confirm PayPal Payment & Verify Server-Side
-  const handleConfirmPayPalPayment = async (simulatedPaypalId?: string) => {
-    if (!currentOrder) return;
+  const executePaymentVerification = async (orderId: string, simulatedPaypalId?: string) => {
     setCheckoutStep('verifying');
     setError(null);
 
@@ -157,7 +246,7 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: currentOrder.id,
+          orderId,
           paypalOrderId,
         }),
       });
@@ -168,6 +257,7 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
         setCurrentOrder(data.order);
         setSettlement(data.settlement);
         setEntitlement(data.entitlement);
+        setHandoffStatus('HandoffPrepared');
         setCheckoutStep('success');
       } else {
         setError(data.error || 'Payment verification failed server-side.');
@@ -179,10 +269,17 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
     }
   };
 
+  // Confirm PayPal Payment & Verify Server-Side
+  const handleConfirmPayPalPayment = async (simulatedPaypalId?: string) => {
+    if (!currentOrder) return;
+    await executePaymentVerification(currentOrder.id, simulatedPaypalId);
+  };
+
   // Server-Authoritative Single-Use Redemption
   const handleRedeemCredential = async () => {
     if (!entitlement) return;
     setError(null);
+    setHandoffStatus('HandoffExecuted');
 
     try {
       const res = await fetch(`/api/access/${entitlement.token}/redeem`, {
@@ -191,6 +288,7 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
       const data = await res.json();
 
       if (data.success) {
+        setHandoffStatus('HandoffCompleted');
         setRedemptionResult({
           redeemed: true,
           facetimeHandle: data.facetimeHandle,
@@ -199,12 +297,14 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
         });
         setEntitlement((prev) => prev ? { ...prev, status: 'redeemed', redeemedAt: data.redeemedAt } : null);
       } else {
+        setHandoffStatus('HandoffFailed');
         setRedemptionResult({
           redeemed: false,
           error: data.error || 'Redemption rejected.',
         });
       }
     } catch (err: any) {
+      setHandoffStatus('HandoffFailed');
       setRedemptionResult({
         redeemed: false,
         error: 'Network error during redemption: ' + err.message,
@@ -236,42 +336,188 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
       {/* Main Container */}
       {checkoutStep === 'details' && providerConfig && (
         <div className="bg-surface-a0 border border-surface-a10 rounded-2xl p-6 sm:p-8 shadow-xl">
+          {/* Provider Header */}
           <div className="pb-6 border-b border-surface-a10">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-info-a0 font-semibold bg-info-a0/10 px-2.5 py-1 rounded-md border border-info-a0/20">
-              Official Provider
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-info-a0 font-semibold bg-info-a0/10 px-2.5 py-1 rounded-md border border-info-a0/20">
+                Official Provider
+              </span>
+              {gateMeta?.promotionType && (
+                <span className="text-[11px] font-mono uppercase tracking-widest text-success-a0 font-bold bg-success-a0/10 px-2.5 py-1 rounded-md border border-success-a0/30">
+                  {gateMeta.promotionType}
+                </span>
+              )}
+              {gateMeta?.expiryDate && (
+                <span className={`text-[11px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                  gateMeta.isExpired 
+                    ? 'text-danger-a0 bg-danger-a0/10 border-danger-a0/30' 
+                    : 'text-surface-a40 bg-tonal-a0 border-surface-a20'
+                }`}>
+                  Expires: {gateMeta.expiryDate}
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-theme-light mt-2">{providerConfig.name}</h1>
           </div>
 
-          <div className="py-6 border-b border-surface-a10">
-            <h2 className="text-sm font-mono uppercase tracking-wider text-surface-a40 mb-3">Select Service Tier</h2>
-            
-            <div className="space-y-3">
-              {providerConfig.services && providerConfig.services.map((svc: any) => (
-                <div 
-                  key={svc.id}
-                  onClick={() => setSelectedServiceId(svc.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${
-                    selectedServiceId === svc.id 
-                      ? 'bg-info-a0/10 border-info-a0 shadow-sm' 
-                      : 'bg-tonal-a0 border-surface-a10 hover:border-surface-a20'
-                  }`}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedServiceId === svc.id ? 'border-info-a0' : 'border-surface-a40'}`}>
-                        {selectedServiceId === svc.id && <div className="w-2 h-2 rounded-full bg-info-a0" />}
+          {/* Custom Campaign Greeting Banner & Service Description */}
+          {(providerConfig.customGreeting || gateMeta?.serviceDescription) && (
+            <div className="mt-4 p-4 bg-info-a0/10 border border-info-a0/30 rounded-xl flex items-start space-x-3 text-theme-light">
+              <QrCode className="w-5 h-5 text-info-a0 flex-shrink-0 mt-0.5" />
+              <div className="text-xs leading-relaxed space-y-1">
+                {gateMeta?.promotionType && (
+                  <p className="font-bold text-info-a0 uppercase tracking-wider text-[10px]">{gateMeta.promotionType} Offer</p>
+                )}
+                {providerConfig.customGreeting && (
+                  <p className="text-theme-light font-medium text-sm">{providerConfig.customGreeting}</p>
+                )}
+                {gateMeta?.serviceDescription && (
+                  <p className="text-surface-a40 text-xs pt-1 italic">{gateMeta.serviceDescription}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Workflow Explanation Banner (QR Code Sales Page vs Direct PayPal) */}
+          <div className="mt-4 p-4 bg-tonal-a0 border border-surface-a10 rounded-2xl space-y-2">
+            <div className="flex items-center space-x-2 text-info-a0 font-mono text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-info-a0" />
+              <span>FaceTime Ticket Sales & Booking Portal</span>
+            </div>
+            <p className="text-xs text-surface-a40 leading-relaxed">
+              Unlike a raw PayPal transfer link, scanning this QR code connects you directly to our official sales page. Here you can select your preferred <strong className="text-theme-light">1-on-1 FaceTime session tier</strong>, pick your <strong className="text-theme-light">appointment date & time</strong>, purchase your ticket via PayPal, and instantly receive your single-use verified access credential.
+            </p>
+          </div>
+
+          <div className="py-6 border-b border-surface-a10 space-y-6">
+            <div>
+              <h2 className="text-sm font-mono uppercase tracking-wider text-surface-a40 mb-3 flex items-center space-x-2">
+                <Ticket className="w-4 h-4 text-info-a0" />
+                <span>1. Select Offer / Service Tier</span>
+              </h2>
+              
+              <div className="space-y-3">
+                {providerConfig.services && providerConfig.services.map((svc: any) => {
+                  const isFree = svc.feeCents === 0;
+                  const isSelected = selectedServiceId === svc.id;
+
+                  return (
+                    <div 
+                      key={svc.id}
+                      onClick={() => setSelectedServiceId(svc.id)}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${
+                        isSelected 
+                          ? 'bg-info-a0/10 border-info-a0 shadow-sm' 
+                          : 'bg-tonal-a0 border-surface-a10 hover:border-surface-a20'
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-info-a0' : 'border-surface-a40'}`}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-info-a0" />}
+                          </div>
+                          <h3 className={`font-bold ${isSelected ? 'text-info-a0' : 'text-theme-light'}`}>{svc.name}</h3>
+                          {isFree && (
+                            <span className="text-[10px] font-mono font-bold uppercase bg-success-a0/20 text-success-a0 border border-success-a0/30 px-2 py-0.5 rounded-full">
+                              Complimentary
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-surface-a40 mt-1.5 ml-6">{svc.description}</p>
                       </div>
-                      <h3 className={`font-bold ${selectedServiceId === svc.id ? 'text-info-a0' : 'text-theme-light'}`}>{svc.name}</h3>
+                      <div className="text-left sm:text-right ml-6 sm:ml-0">
+                        {isFree ? (
+                          <div className="text-lg font-extrabold text-success-a0 font-mono">FREE</div>
+                        ) : (
+                          <>
+                            <div className="text-xl font-extrabold text-theme-light">${(svc.feeCents / 100).toFixed(2)}</div>
+                            <div className="text-[10px] text-surface-a50 font-mono">USD</div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-surface-a40 mt-1.5 ml-6">{svc.description}</p>
-                  </div>
-                  <div className="text-left sm:text-right ml-6 sm:ml-0">
-                    <div className="text-xl font-extrabold text-theme-light">${(svc.feeCents / 100).toFixed(2)}</div>
-                    <div className="text-[10px] text-surface-a50 font-mono">USD</div>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. FaceTime Appointment Scheduler */}
+            <div className="pt-4 border-t border-surface-a10/60 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-mono uppercase tracking-wider text-surface-a40 flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-info-a0" />
+                  <span>2. Schedule 1-on-1 FaceTime Appointment</span>
+                </h2>
+                <span className="text-[10px] font-mono text-surface-a50 bg-tonal-a0 px-2 py-0.5 rounded border border-surface-a10">
+                  TZ: {clientTimezone}
+                </span>
+              </div>
+
+              {/* Date Selection Chips */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-surface-a40 font-mono block">Select Date:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[0, 1, 2, 3, 4].map((offset) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + offset);
+                    const isoDate = d.toISOString().split('T')[0];
+                    const labelDay = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' });
+                    const labelFormatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const isSelected = selectedAppointmentDate === isoDate;
+
+                    return (
+                      <button
+                        type="button"
+                        key={isoDate}
+                        onClick={() => setSelectedAppointmentDate(isoDate)}
+                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                          isSelected
+                            ? 'bg-info-a0 text-primary-a0 font-bold border-info-a0 shadow-md'
+                            : 'bg-tonal-a0 border-surface-a10 text-theme-light hover:border-surface-a30'
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase font-mono tracking-wider opacity-80">{labelDay}</div>
+                        <div className="text-xs font-bold font-mono mt-0.5">{labelFormatted}</div>
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+
+              {/* Time Slot Selection */}
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs text-surface-a40 font-mono block">Select Time Slot:</label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {['09:30 AM', '11:00 AM', '02:00 PM', '04:30 PM', '07:00 PM'].map((slot) => {
+                    const isSelected = selectedTimeSlot === slot;
+                    return (
+                      <button
+                        type="button"
+                        key={slot}
+                        onClick={() => setSelectedTimeSlot(slot)}
+                        className={`p-2 rounded-lg border text-center font-mono text-xs font-bold transition-all ${
+                          isSelected
+                            ? 'bg-info-a0 text-primary-a0 border-info-a0 shadow'
+                            : 'bg-tonal-a0 border-surface-a10 text-theme-light hover:border-surface-a30'
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Appointment Confirmation Badge */}
+              <div className="bg-info-a0/10 border border-info-a0/20 p-3 rounded-xl flex items-center justify-between font-mono text-xs">
+                <div className="flex items-center space-x-2 text-info-a0">
+                  <Video className="w-4 h-4 text-info-a0" />
+                  <span className="font-bold">Reserved Appointment Slot:</span>
+                </div>
+                <div className="text-theme-light font-bold">
+                  {selectedAppointmentDate} @ {selectedTimeSlot}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
@@ -284,13 +530,13 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
               <div className="bg-tonal-a0/80 border border-surface-a10 p-3.5 rounded-xl">
                 <QrCode className="w-4 h-4 text-info-a0 mb-2" />
                 <h3 className="text-xs font-semibold text-theme-light">Opaque Single-Use QR</h3>
-                <p className="text-[11px] text-surface-a40 mt-1">Disposable credential generated upon payment.</p>
+                <p className="text-[11px] text-surface-a40 mt-1">Disposable ticket generated upon payment.</p>
               </div>
 
               <div className="bg-tonal-a0/80 border border-surface-a10 p-3.5 rounded-xl">
                 <Shield className="w-4 h-4 text-info-a0 mb-2" />
                 <h3 className="text-xs font-semibold text-theme-light">Guaranteed Onboarding</h3>
-                <p className="text-[11px] text-surface-a40 mt-1">Direct session handoff unlocked upon payment.</p>
+                <p className="text-[11px] text-surface-a40 mt-1">Direct FaceTime session handoff unlocked upon payment.</p>
               </div>
             </div>
           </div>
@@ -319,24 +565,41 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
 
           {/* Action Section */}
           <div className="pt-4 border-t border-surface-a10">
-            <button
-              onClick={handleStartCheckout}
-              disabled={isProcessingPayment || !providerConfig.active || !selectedServiceId || !agreedToIndemnity}
-              className="w-full py-4 bg-info-a0 hover:bg-info-a10 text-primary-a0 font-bold text-sm sm:text-base rounded-xl shadow-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessingPayment ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  <span>Initiating Order...</span>
-                </>
-              ) : (
-                <>
-                  <DollarSign className="w-5 h-5" />
-                  <span>Pay ${(providerConfig.services?.find((s:any) => s.id === selectedServiceId)?.feeCents / 100).toFixed(2) || '0.00'} via PayPal</span>
-                  <ArrowRight className="w-5 h-5 ml-1" />
-                </>
-              )}
-            </button>
+            {(() => {
+              const selectedSvc = providerConfig.services?.find((s: any) => s.id === selectedServiceId);
+              const isFree = selectedSvc && selectedSvc.feeCents === 0;
+
+              return (
+                <button
+                  onClick={handleStartCheckout}
+                  disabled={isProcessingPayment || !providerConfig.active || !selectedServiceId || !agreedToIndemnity}
+                  className={`w-full py-4 text-primary-a0 font-bold text-sm sm:text-base rounded-xl shadow-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isFree 
+                      ? 'bg-success-a0 hover:bg-success-a0/90' 
+                      : 'bg-info-a0 hover:bg-info-a10'
+                  }`}
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <span>{isFree ? 'Claiming Pass...' : 'Initiating Order...'}</span>
+                    </>
+                  ) : isFree ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-primary-a0" />
+                      <span>Claim Free Alignment Session (Instant Ticket)</span>
+                      <ArrowRight className="w-5 h-5 ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-5 h-5" />
+                      <span>Pay ${(selectedSvc?.feeCents / 100).toFixed(2) || '0.00'} via PayPal</span>
+                      <ArrowRight className="w-5 h-5 ml-1" />
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -432,11 +695,31 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
               </div>
             </div>
 
-            <div className="px-3 py-1.5 rounded-lg bg-success-a0/10 border border-success-a0/20 text-success-a0 text-xs font-mono font-medium flex items-center space-x-1.5">
-              <div className="w-2 h-2 rounded-full bg-success-a0 animate-pulse" />
-              <span className="uppercase">STATUS: {entitlement.status}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="px-3 py-1.5 rounded-lg bg-success-a0/10 border border-success-a0/20 text-success-a0 text-xs font-mono font-medium flex items-center space-x-1.5">
+                <div className="w-2 h-2 rounded-full bg-success-a0 animate-pulse" />
+                <span className="uppercase">STATUS: {entitlement.status}</span>
+              </div>
+              <div className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center space-x-1.5 ${HANDOFF_MESSAGES[handoffStatus || 'HandoffPrepared'].badgeStyle}`}>
+                <span className="uppercase">HANDOFF: {handoffStatus || 'HandoffPrepared'}</span>
+              </div>
             </div>
           </div>
+
+          {/* Handoff State Notice Banner */}
+          {(() => {
+            const msg = HANDOFF_MESSAGES[handoffStatus || 'HandoffPrepared'];
+            return (
+              <div className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10 space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-4 h-4 text-info-a0 flex-shrink-0" />
+                  <span className="text-xs font-bold text-theme-light">{msg.title}</span>
+                </div>
+                <p className="text-xs text-surface-a40 pl-6">{msg.description}</p>
+                <p className="text-[10px] text-surface-a50 font-mono pl-6 pt-0.5">{msg.architectureNote}</p>
+              </div>
+            );
+          })()}
 
           {/* QR Code & Token Display */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -456,6 +739,18 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
 
             {/* Credential Specs */}
             <div className="space-y-4">
+              {/* Confirmed Appointment Card */}
+              <div className="bg-info-a0/10 p-4 rounded-xl border border-info-a0/30 space-y-1 font-mono text-xs">
+                <span className="text-[10px] text-info-a0 uppercase font-bold tracking-wider block flex items-center">
+                  <Calendar className="w-3.5 h-3.5 mr-1 inline" />
+                  <span>Confirmed 1-on-1 FaceTime Appointment</span>
+                </span>
+                <div className="text-theme-light font-bold text-sm pt-0.5">
+                  {selectedAppointmentDate} @ {selectedTimeSlot}
+                </div>
+                <span className="text-[10px] text-surface-a40 block">Timezone: {clientTimezone}</span>
+              </div>
+
               <div className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10 space-y-2">
                 <label className="text-[10px] font-mono uppercase text-surface-a40 tracking-wider">Opaque Access Token</label>
                 <div className="font-mono text-xs text-info-a0 bg-surface-a0 p-2.5 rounded-lg border border-surface-a10 break-all select-all">
@@ -484,7 +779,7 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
                   <Video className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-theme-light">FaceTime Gate Unlocked</h3>
+                  <h3 className="text-lg font-bold text-theme-light">Controlled Handoff Completed</h3>
                   <p className="text-xs text-theme-light mt-1">{redemptionResult.instruction}</p>
                 </div>
 
@@ -498,26 +793,27 @@ export const ClientCheckout: React.FC<ClientCheckoutProps> = ({
                     <ExternalLink className="w-4 h-4 ml-1" />
                   </a>
                 </div>
-                <p className="text-[10px] text-surface-a40 font-mono">
-                  Credential status updated to REDEEMED. Single-use access consumed.
-                </p>
+                <div className="text-[10px] text-surface-a40 font-mono space-y-1">
+                  <p>Handoff Status: HandoffCompleted • Credential status updated to REDEEMED.</p>
+                  <p className="text-surface-a50">GateKeeper delivers access authorization and fee settlement. Media content is conducted directly over external provider channels without observation or recording.</p>
+                </div>
               </div>
             ) : (
               <div className="bg-tonal-a0 p-6 rounded-2xl border border-surface-a10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-theme-light">Redeem Access Credential</h3>
+                  <h3 className="text-sm font-semibold text-theme-light">Redeem Access Credential & Execute Handoff</h3>
                   <p className="text-xs text-surface-a40 mt-0.5">
-                    Click to perform single-use server redemption and reveal your private session onboarding details.
+                    Handoff Prepared: Click below to perform single-use server redemption and initiate transfer to your provider session.
                   </p>
                 </div>
 
                 <button
                   onClick={handleRedeemCredential}
-                  disabled={entitlement.status !== 'active'}
+                  disabled={entitlement.status !== 'active' || handoffStatus === 'HandoffExecuted'}
                   className="w-full sm:w-auto px-6 py-3 bg-info-a0 hover:bg-info-a10 text-primary-a0 font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Video className="w-4 h-4" />
-                  <span>Redeem Credential & Connect</span>
+                  <span>{handoffStatus === 'HandoffExecuted' ? 'Executing Handoff...' : 'Redeem Credential & Connect'}</span>
                 </button>
               </div>
             )}

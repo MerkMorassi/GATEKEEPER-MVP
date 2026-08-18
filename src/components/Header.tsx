@@ -1,118 +1,135 @@
 import React from 'react';
-import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut, Sliders, Download } from 'lucide-react';
+import { Shield, Lock, LayoutDashboard, KeyRound, QrCode, LogOut, Sliders, Download, Sparkles } from 'lucide-react';
 
 interface HeaderProps {
-  currentTab: 'portal' | 'client' | 'provider' | 'agent' | 'scanner';
-  onTabChange: (tab: 'portal' | 'client' | 'provider' | 'agent' | 'scanner') => void;
+  currentTab: 'portal' | 'sales' | 'client' | 'provider' | 'agent' | 'scanner';
+  onTabChange: (tab: 'portal' | 'sales' | 'client' | 'provider' | 'agent' | 'scanner') => void;
   providerActive: boolean;
   role?: 'admin' | 'provider' | null;
   onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, role, onLogout }) => {
+  const tabs = [
+    { id: 'portal', label: 'Portal', icon: KeyRound },
+    { id: 'sales', label: 'Sales Page', icon: Sparkles },
+    { id: 'client', label: 'Checkout', icon: Lock },
+    { id: 'provider', label: 'Provider', icon: Sliders },
+    { id: 'agent', label: 'Admin', icon: LayoutDashboard },
+    { id: 'scanner', label: 'Gate', icon: QrCode },
+  ] as const;
+
   return (
-    <header className="bg-surface-a0 border-b border-surface-a10 text-theme-light sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Logo & Tagline */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onTabChange('portal')}>
-          <div className="w-10 h-10 rounded-lg bg-info-a0/10 border border-info-a0/30 flex items-center justify-center text-info-a0">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-semibold text-lg tracking-wider text-theme-light uppercase">GATEKEEPER</span>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-info-a0/20 text-info-a0 border border-info-a0/30">
-                MVP 1.1
-              </span>
+    <header className="bg-surface-a0 border-b border-surface-a10 text-theme-light sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-lg">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between h-14 sm:h-16">
+          {/* Logo & Tagline */}
+          <div className="flex items-center space-x-2.5 cursor-pointer flex-shrink-0" onClick={() => onTabChange('portal')}>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-info-a0/10 border border-info-a0/30 flex items-center justify-center text-info-a0">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <p className="text-[11px] text-surface-a40 font-mono tracking-wide hidden sm:block">
-              ALL SIGNAL. NO NOISE.
-            </p>
+            <div>
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <span className="font-bold text-base sm:text-lg tracking-wider text-theme-light uppercase">GATEKEEPER</span>
+                <span className="text-[9px] sm:text-[10px] uppercase font-mono px-1.5 sm:px-2 py-0.5 rounded-full bg-info-a0/20 text-info-a0 border border-info-a0/30 font-semibold">
+                  MVP 1.1
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-surface-a40 font-mono tracking-wide hidden sm:block">
+                ALL SIGNAL. NO NOISE.
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Tabs (md breakpoint and above) */}
+          <nav className="hidden md:flex items-center space-x-1.5 sm:space-x-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = currentTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center space-x-1.5 ${
+                    isActive
+                      ? 'bg-tonal-a10 text-info-a0 border border-info-a0/40 shadow-sm font-bold'
+                      : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/60'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+
+            <a
+              href="/api/download-zip"
+              download="gatekeeper-latest.zip"
+              title="Download Complete Codebase (.ZIP)"
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium bg-info-a0/10 hover:bg-info-a0/20 text-info-a0 border border-info-a0/30 transition-all flex items-center space-x-1.5 ml-1"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>ZIP</span>
+            </a>
+
+            {role && onLogout && (
+              <button
+                onClick={onLogout}
+                title="End Secure Session"
+                className="ml-1 px-2.5 py-1.5 rounded-lg text-danger-a0 hover:bg-danger-a0/10 transition-colors flex items-center space-x-1 text-xs font-mono"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Exit</span>
+              </button>
+            )}
+          </nav>
+
+          {/* Mobile Top Right Quick Action Buttons */}
+          <div className="flex md:hidden items-center space-x-2">
+            <a
+              href="/api/download-zip"
+              download="gatekeeper-latest.zip"
+              title="Download Complete Codebase (.ZIP)"
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-info-a0/10 text-info-a0 border border-info-a0/30 flex items-center space-x-1"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="text-[10px]">ZIP</span>
+            </a>
+
+            {role && onLogout && (
+              <button
+                onClick={onLogout}
+                title="End Secure Session"
+                className="p-1 rounded-lg text-danger-a0 hover:bg-danger-a0/10 border border-danger-a0/20 transition-colors flex items-center"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Navigation tabs */}
-        <nav className="flex items-center space-x-1 sm:space-x-2">
-          <button
-            onClick={() => onTabChange('portal')}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1.5 ${
-              currentTab === 'portal'
-                ? 'bg-tonal-a10 text-info-a0 border border-surface-a20'
-                : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>Portal</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('client')}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1.5 ${
-              currentTab === 'client'
-                ? 'bg-tonal-a10 text-info-a0 border border-surface-a20'
-                : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
-            }`}
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Checkout</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('provider')}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1.5 ${
-              currentTab === 'provider'
-                ? 'bg-tonal-a10 text-info-a0 border border-surface-a20'
-                : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Provider</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('agent')}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1.5 ${
-              currentTab === 'agent'
-                ? 'bg-tonal-a10 text-info-a0 border border-surface-a20'
-                : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Admin</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('scanner')}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1.5 ${
-              currentTab === 'scanner'
-                ? 'bg-tonal-a10 text-info-a0 border border-surface-a20'
-                : 'text-surface-a40 hover:text-theme-light hover:bg-surface-a10/50'
-            }`}
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Gate</span>
-          </button>
-
-          <a
-            href="/api/download-zip"
-            download="gatekeeper-latest.zip"
-            title="Download Complete Codebase (.ZIP)"
-            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium bg-info-a0/10 hover:bg-info-a0/20 text-info-a0 border border-info-a0/30 transition-all flex items-center space-x-1.5"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">ZIP</span>
-          </a>
-
-          {role && onLogout && (
-            <button
-              onClick={onLogout}
-              title="End Secure Session"
-              className="ml-2 px-2 py-1.5 rounded-md text-danger-a0 hover:bg-danger-a0/10 transition-colors flex items-center"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
-        </nav>
+        {/* Mobile Navigation Bar (Scrollable horizontally, strictly contained inside header) */}
+        <div className="flex md:hidden items-center space-x-1.5 overflow-x-auto no-scrollbar py-2 border-t border-surface-a10/60 -mx-3 px-3">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id as any)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 whitespace-nowrap flex-shrink-0 ${
+                  isActive
+                    ? 'bg-info-a0/20 text-info-a0 border border-info-a0/40 shadow-sm font-bold'
+                    : 'bg-tonal-a0/90 text-surface-a40 hover:text-theme-light border border-surface-a10/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </header>
   );

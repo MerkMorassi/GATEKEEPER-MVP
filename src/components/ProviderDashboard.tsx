@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, CheckCircle2, RefreshCw, Power, Mail, Video, QrCode, Copy, Trash2, Plus, Clock, AlertCircle, Check, Download, ExternalLink, X, Edit3 } from 'lucide-react';
+import { Settings, CheckCircle2, RefreshCw, Power, Mail, Video, QrCode, Copy, Trash2, Plus, Clock, AlertCircle, Check, Download, ExternalLink, X, Edit3, Filter, ArrowUpDown, Search } from 'lucide-react';
 import QRCode from 'qrcode';
 import { ProviderConfig, Order, Gate, ServiceDefinition } from '../types';
 
@@ -15,8 +15,26 @@ export const ProviderDashboard: React.FC = () => {
 
   // Gate management state
   const [newGateCustomName, setNewGateCustomName] = useState('');
+  const [newGatePromotionType, setNewGatePromotionType] = useState('Free Consultation');
+  const [newGateTargetServiceId, setNewGateTargetServiceId] = useState('');
+  const [newGateServiceDescription, setNewGateServiceDescription] = useState('');
+  const [newGateExpiryDate, setNewGateExpiryDate] = useState('');
+  const [newGateCustomGreeting, setNewGateCustomGreeting] = useState('');
+  const [showGateMetadataForm, setShowGateMetadataForm] = useState(false);
+
+  // Gate Filtering & Sorting State
+  const [gateFilter, setGateFilter] = useState<'all' | 'active' | 'expired'>('all');
+  const [gateSortBy, setGateSortBy] = useState<'created_desc' | 'created_asc' | 'expiry_asc' | 'expiry_desc' | 'name_asc'>('created_desc');
+  const [gateSearchQuery, setGateSearchQuery] = useState('');
+
+  // Editing Gate State
   const [editingGateId, setEditingGateId] = useState<string | null>(null);
   const [editingGateName, setEditingGateName] = useState('');
+  const [editingGatePromotionType, setEditingGatePromotionType] = useState('');
+  const [editingGateTargetServiceId, setEditingGateTargetServiceId] = useState('');
+  const [editingGateServiceDescription, setEditingGateServiceDescription] = useState('');
+  const [editingGateExpiryDate, setEditingGateExpiryDate] = useState('');
+  const [editingGateCustomGreeting, setEditingGateCustomGreeting] = useState('');
   const [deletingGateId, setDeletingGateId] = useState<string | null>(null);
 
   // Field level status indicators
@@ -34,6 +52,7 @@ export const ProviderDashboard: React.FC = () => {
     qrDataUrl: string;
     directUrl: string;
     feeText?: string;
+    gateDetails?: Gate;
   } | null>(null);
 
   // Form fields
@@ -185,11 +204,23 @@ export const ProviderDashboard: React.FC = () => {
       const res = await fetch('/api/gates/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameToUse })
+        body: JSON.stringify({
+          name: nameToUse,
+          promotionType: newGatePromotionType || undefined,
+          targetServiceId: newGateTargetServiceId || undefined,
+          serviceDescription: newGateServiceDescription || undefined,
+          expiryDate: newGateExpiryDate || undefined,
+          customGreeting: newGateCustomGreeting || undefined,
+        })
       });
       const data = await res.json();
       if (data.success) {
         setNewGateCustomName('');
+        setNewGateServiceDescription('');
+        setNewGateExpiryDate('');
+        setNewGateCustomGreeting('');
+        setNewGateTargetServiceId('');
+        setShowGateMetadataForm(false);
         setGateNotice(`New marketing gate "${nameToUse}" generated ✓`);
         setTimeout(() => setGateNotice(null), 3000);
         fetchData();
@@ -200,6 +231,34 @@ export const ProviderDashboard: React.FC = () => {
       setMessage({ text: 'Error generating gate: ' + err.message, type: 'error' });
     } finally {
       setGeneratingGate(false);
+    }
+  };
+
+  const handleUpdateGateMetadata = async (id: string) => {
+    try {
+      const res = await fetch(`/api/gates/${id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingGateName.trim(),
+          promotionType: editingGatePromotionType || undefined,
+          targetServiceId: editingGateTargetServiceId || undefined,
+          serviceDescription: editingGateServiceDescription || undefined,
+          expiryDate: editingGateExpiryDate || undefined,
+          customGreeting: editingGateCustomGreeting || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditingGateId(null);
+        setGateNotice('Marketing Gate metadata updated ✓');
+        setTimeout(() => setGateNotice(null), 3000);
+        fetchData();
+      } else {
+        setMessage({ text: data.error || 'Failed to update gate metadata', type: 'error' });
+      }
+    } catch (err: any) {
+      setMessage({ text: 'Error updating gate: ' + err.message, type: 'error' });
     }
   };
 
@@ -326,11 +385,14 @@ export const ProviderDashboard: React.FC = () => {
       margin: 2,
       color: { dark: '#111827', light: '#FFFFFF' }
     });
+    const targetSvc = services.find(s => s.id === gate.targetServiceId);
     setQrModalData({
       title: gate.name || 'Marketing Access Gate',
-      subtitle: `Gate ID: ${gate.id}`,
+      subtitle: gate.promotionType ? `[${gate.promotionType}]` : `Gate ID: ${gate.id}`,
+      feeText: targetSvc ? (targetSvc.feeCents === 0 ? 'Complimentary ($0.00)' : `$${(targetSvc.feeCents / 100).toFixed(2)} USD`) : undefined,
       qrDataUrl,
-      directUrl
+      directUrl,
+      gateDetails: gate,
     });
   };
 
@@ -640,103 +702,337 @@ export const ProviderDashboard: React.FC = () => {
         </div>
       </form>
 
-      {/* Gates Management (Full CRUD) */}
+      {/* Gates Management (Full CRUD + Metadata Embedding) */}
       <div className="bg-surface-a0 border border-surface-a10 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-surface-a10 gap-2">
           <h2 className="text-sm font-semibold text-theme-light flex items-center space-x-2">
             <QrCode className="w-4 h-4 text-info-a0" />
-            <span>Marketing Gates (Client Entry Links)</span>
+            <span>Marketing Gates (Client Entry Links & QR Codes)</span>
           </h2>
           <span className="text-[10px] font-mono text-surface-a40">
             {gates.length} Gate{gates.length !== 1 ? 's' : ''} Configured
           </span>
         </div>
 
-        {/* Create Gate Form */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-1">
-          <input
-            type="text"
-            value={newGateCustomName}
-            onChange={(e) => setNewGateCustomName(e.target.value)}
-            placeholder={`Campaign Name (e.g., "Instagram Promo Link")...`}
-            className="flex-1 bg-tonal-a0 border border-surface-a10 rounded-xl px-3.5 py-2 text-xs font-mono text-theme-light focus:outline-none focus:border-info-a0"
-          />
-          <button
-            onClick={() => handleGenerateGate()}
-            disabled={generatingGate}
-            className="px-4 py-2 bg-info-a0 hover:bg-info-a10 text-primary-a0 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 flex-shrink-0"
-          >
-            {generatingGate ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5" />
-            )}
-            <span>Generate Marketing Gate</span>
-          </button>
+        {/* Create Gate Form with Metadata Controls */}
+        <div className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10/80 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={newGateCustomName}
+              onChange={(e) => setNewGateCustomName(e.target.value)}
+              placeholder={`Campaign Name (e.g., "Instagram Alignment Offer")...`}
+              className="flex-1 bg-surface-a0 border border-surface-a10 rounded-xl px-3.5 py-2 text-xs font-mono text-theme-light focus:outline-none focus:border-info-a0"
+            />
+            
+            <button
+              type="button"
+              onClick={() => setShowGateMetadataForm(!showGateMetadataForm)}
+              className={`px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all flex items-center justify-center space-x-1.5 ${
+                showGateMetadataForm
+                  ? 'bg-info-a0/20 text-info-a0 border-info-a0/40'
+                  : 'bg-surface-a0 text-surface-a40 border-surface-a10 hover:text-theme-light'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>{showGateMetadataForm ? 'Hide Metadata Parameters' : 'Add Campaign Metadata'}</span>
+            </button>
+
+            <button
+              onClick={() => handleGenerateGate()}
+              disabled={generatingGate}
+              className="px-4 py-2 bg-info-a0 hover:bg-info-a10 text-primary-a0 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 flex-shrink-0"
+            >
+              {generatingGate ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              <span>Generate Marketing Gate</span>
+            </button>
+          </div>
+
+          {/* Expanded Metadata Inputs */}
+          {showGateMetadataForm && (
+            <div className="pt-3 border-t border-surface-a10/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs font-mono animate-fadeIn">
+              <div className="space-y-1">
+                <label className="text-[10px] text-surface-a40 uppercase font-bold">Promotion Type</label>
+                <select
+                  value={newGatePromotionType}
+                  onChange={(e) => setNewGatePromotionType(e.target.value)}
+                  className="w-full bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-xs text-theme-light focus:outline-none focus:border-info-a0"
+                >
+                  <option value="Free Consultation">Free Consultation / Complimentary Pass</option>
+                  <option value="Special Promotion">Special Discount / Promotion</option>
+                  <option value="Webinar Perk">Webinar Perk / Special Event</option>
+                  <option value="VIP Access">VIP Member Access</option>
+                  <option value="General Promo">General Marketing Link</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-surface-a40 uppercase font-bold">Target Service Tier</label>
+                <select
+                  value={newGateTargetServiceId}
+                  onChange={(e) => setNewGateTargetServiceId(e.target.value)}
+                  className="w-full bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-xs text-theme-light focus:outline-none focus:border-info-a0"
+                >
+                  <option value="">All Tiers Allowed (Client Selects)</option>
+                  {services.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.feeCents === 0 ? 'FREE' : `$${(s.feeCents / 100).toFixed(2)}`})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-surface-a40 uppercase font-bold">Expiry Date</label>
+                <input
+                  type="date"
+                  value={newGateExpiryDate}
+                  onChange={(e) => setNewGateExpiryDate(e.target.value)}
+                  className="w-full bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-xs text-theme-light focus:outline-none focus:border-info-a0"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                <label className="text-[10px] text-surface-a40 uppercase font-bold">Custom Greeting / Headline</label>
+                <input
+                  type="text"
+                  value={newGateCustomGreeting}
+                  onChange={(e) => setNewGateCustomGreeting(e.target.value)}
+                  placeholder="Welcome! Claim your 1-on-1 Session..."
+                  className="w-full bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-xs text-theme-light focus:outline-none focus:border-info-a0"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-[10px] text-surface-a40 uppercase font-bold">Service Description / Promotion Notes</label>
+                <input
+                  type="text"
+                  value={newGateServiceDescription}
+                  onChange={(e) => setNewGateServiceDescription(e.target.value)}
+                  placeholder="Embedded promotion details or terms for this specific campaign..."
+                  className="w-full bg-surface-a0 border border-surface-a10 rounded-lg px-2.5 py-1.5 text-xs text-theme-light focus:outline-none focus:border-info-a0"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {gates.length === 0 ? (
-          <p className="text-xs text-surface-a40 font-mono py-6 text-center bg-tonal-a0/50 rounded-xl border border-surface-a10/50">
-            No marketing gates generated yet. Create one above to issue client entry links.
-          </p>
-        ) : (
-          <div className="space-y-3 pt-2">
-            {gates.map(gate => {
-              const gateUrl = `${window.location.origin}/#gate=${gate.token}`;
-              const isEditingThisGate = editingGateId === gate.id;
+        {/* Filter, Sort & Search Toolbar and List Rendering */}
+        {(() => {
+          const activeGatesCount = gates.filter(g => !g.expiryDate || new Date(g.expiryDate).getTime() >= Date.now()).length;
+          const expiredGatesCount = gates.filter(g => g.expiryDate && new Date(g.expiryDate).getTime() < Date.now()).length;
 
-              return (
-                <div key={gate.id} className="bg-tonal-a0 p-4 rounded-xl border border-surface-a10 text-xs font-mono space-y-2.5 transition-all hover:border-surface-a20">
+          const filteredAndSortedGates = gates
+            .filter(gate => {
+              const isExpired = gate.expiryDate ? new Date(gate.expiryDate).getTime() < Date.now() : false;
+              if (gateFilter === 'active' && isExpired) return false;
+              if (gateFilter === 'expired' && !isExpired) return false;
+              if (gateSearchQuery.trim()) {
+                const q = gateSearchQuery.toLowerCase();
+                const matchName = (gate.name || '').toLowerCase().includes(q);
+                const matchPromo = (gate.promotionType || '').toLowerCase().includes(q);
+                const matchGreeting = (gate.customGreeting || '').toLowerCase().includes(q);
+                const matchDesc = (gate.serviceDescription || '').toLowerCase().includes(q);
+                const matchId = (gate.id || '').toLowerCase().includes(q);
+                if (!matchName && !matchPromo && !matchGreeting && !matchDesc && !matchId) return false;
+              }
+              return true;
+            })
+            .sort((a, b) => {
+              if (gateSortBy === 'created_desc') {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              }
+              if (gateSortBy === 'created_asc') {
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              }
+              if (gateSortBy === 'expiry_asc') {
+                if (!a.expiryDate && !b.expiryDate) return 0;
+                if (!a.expiryDate) return 1;
+                if (!b.expiryDate) return -1;
+                return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+              }
+              if (gateSortBy === 'expiry_desc') {
+                if (!a.expiryDate && !b.expiryDate) return 0;
+                if (!a.expiryDate) return 1;
+                if (!b.expiryDate) return -1;
+                return new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime();
+              }
+              if (gateSortBy === 'name_asc') {
+                return (a.name || a.id).localeCompare(b.name || b.id);
+              }
+              return 0;
+            });
+
+          return (
+            <>
+              {/* Filter, Sort & Search Toolbar */}
+              {gates.length > 0 && (
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 pt-2 pb-1 bg-tonal-a0/60 p-3 rounded-xl border border-surface-a10/60 text-xs font-mono">
+                  {/* Filter Pills */}
+                  <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
+                    <span className="text-[10px] text-surface-a40 font-bold uppercase flex items-center space-x-1 mr-1">
+                      <Filter className="w-3 h-3 text-info-a0" />
+                      <span>Filter:</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setGateFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center space-x-1 whitespace-nowrap ${
+                        gateFilter === 'all'
+                          ? 'bg-info-a0/20 text-info-a0 border border-info-a0/40 font-bold'
+                          : 'bg-surface-a0 text-surface-a40 border border-surface-a10 hover:text-theme-light'
+                      }`}
+                    >
+                      <span>All ({gates.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGateFilter('active')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center space-x-1 whitespace-nowrap ${
+                        gateFilter === 'active'
+                          ? 'bg-success-a0/20 text-success-a0 border border-success-a0/40 font-bold'
+                          : 'bg-surface-a0 text-surface-a40 border border-surface-a10 hover:text-theme-light'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Active ({activeGatesCount})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGateFilter('expired')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center space-x-1 whitespace-nowrap ${
+                        gateFilter === 'expired'
+                          ? 'bg-danger-a0/20 text-danger-a0 border border-danger-a0/40 font-bold'
+                          : 'bg-surface-a0 text-surface-a40 border border-surface-a10 hover:text-theme-light'
+                      }`}
+                    >
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Expired ({expiredGatesCount})</span>
+                    </button>
+                  </div>
+
+                  {/* Search & Sort Controls */}
+                  <div className="flex items-center space-x-2">
+                    {/* Search Input */}
+                    <div className="relative flex-1 md:w-48">
+                      <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-a40" />
+                      <input
+                        type="text"
+                        value={gateSearchQuery}
+                        onChange={(e) => setGateSearchQuery(e.target.value)}
+                        placeholder="Search gates..."
+                        className="w-full bg-surface-a0 border border-surface-a10 rounded-lg pl-7 pr-6 py-1 text-[11px] text-theme-light focus:outline-none focus:border-info-a0 font-mono"
+                      />
+                      {gateSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setGateSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-surface-a40 hover:text-theme-light"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Sort Select */}
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      <ArrowUpDown className="w-3 h-3 text-info-a0 hidden sm:block" />
+                      <select
+                        value={gateSortBy}
+                        onChange={(e) => setGateSortBy(e.target.value as any)}
+                        className="bg-surface-a0 border border-surface-a10 rounded-lg px-2 py-1 text-[11px] text-theme-light focus:outline-none focus:border-info-a0 font-mono"
+                      >
+                        <option value="created_desc">Newest Created</option>
+                        <option value="created_asc">Oldest Created</option>
+                        <option value="expiry_asc">Expiry (Soonest)</option>
+                        <option value="expiry_desc">Expiry (Furthest)</option>
+                        <option value="name_asc">Name (A-Z)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {gates.length === 0 ? (
+                <p className="text-xs text-surface-a40 font-mono py-6 text-center bg-tonal-a0/50 rounded-xl border border-surface-a10/50">
+                  No marketing gates generated yet. Create one above to issue client entry links.
+                </p>
+              ) : filteredAndSortedGates.length === 0 ? (
+                <div className="text-xs text-surface-a40 font-mono py-6 text-center bg-tonal-a0/50 rounded-xl border border-surface-a10/50 space-y-2">
+                  <p>No marketing gates match your current filter or search criteria.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGateFilter('all');
+                      setGateSearchQuery('');
+                    }}
+                    className="px-3 py-1 bg-surface-a20 hover:bg-surface-a30 text-theme-light rounded-lg text-[11px] font-semibold transition-colors"
+                  >
+                    Reset Filter & Search
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 pt-1">
+                  {filteredAndSortedGates.map(gate => {
+                    const gateUrl = `${window.location.origin}/#gate=${gate.token}`;
+                    const isEditingThisGate = editingGateId === gate.id;
+                    const targetSvc = services.find(s => s.id === gate.targetServiceId);
+                    const isExpired = gate.expiryDate ? new Date(gate.expiryDate).getTime() < Date.now() : false;
+
+                    return (
+                <div key={gate.id} className="animate-fadeIn bg-tonal-a0 p-4 rounded-xl border border-surface-a10 text-xs font-mono space-y-3 transition-all hover:border-surface-a20">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-surface-a10/60">
                     <div className="flex items-center space-x-2 flex-1">
-                      {isEditingThisGate ? (
-                        <div className="flex items-center space-x-1.5 flex-1 max-w-sm">
-                          <input
-                            type="text"
-                            value={editingGateName}
-                            onChange={(e) => setEditingGateName(e.target.value)}
-                            className="bg-surface-a0 border border-info-a0 rounded px-2.5 py-1 text-xs text-theme-light focus:outline-none flex-1 font-mono"
-                            placeholder="Gate Name"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleUpdateGateName(gate.id)}
-                            className="p-1 bg-success-a0/20 text-success-a0 rounded hover:bg-success-a0/30"
-                            title="Save Name"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingGateId(null);
-                              setEditingGateName('');
-                            }}
-                            className="p-1 bg-surface-a20 text-surface-a40 rounded hover:text-theme-light"
-                            title="Cancel"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      <span className="text-theme-light font-bold text-sm">
+                        {gate.name || gate.id}
+                      </span>
+                      
+                      {/* Validity Status Badge (Active/Expired based on metadata expiry date) */}
+                      {isExpired ? (
+                        <span className="text-[10px] font-bold uppercase bg-danger-a0/20 text-danger-a0 border border-danger-a0/40 px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-sm">
+                          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                          <span>Expired ({gate.expiryDate})</span>
+                        </span>
                       ) : (
-                        <div className="flex items-center space-x-2">
-                          <span className="text-theme-light font-bold text-sm">
-                            {gate.name || gate.id}
-                          </span>
-                          <button
-                            onClick={() => {
-                              setEditingGateId(gate.id);
-                              setEditingGateName(gate.name || '');
-                            }}
-                            className="p-1 text-surface-a40 hover:text-info-a0 transition-colors"
-                            title="Rename Gate"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        <span className="text-[10px] font-bold uppercase bg-success-a0/20 text-success-a0 border border-success-a0/40 px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-sm">
+                          <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                          <span>{gate.expiryDate ? `Active (Expires ${gate.expiryDate})` : 'Active (No Expiry)'}</span>
+                        </span>
+                      )}
+
+                      {gate.promotionType && (
+                        <span className="text-[9px] font-bold uppercase bg-info-a0/10 text-info-a0 border border-info-a0/30 px-2 py-0.5 rounded-full">
+                          {gate.promotionType}
+                        </span>
                       )}
                     </div>
 
                     <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          if (isEditingThisGate) {
+                            setEditingGateId(null);
+                          } else {
+                            setEditingGateId(gate.id);
+                            setEditingGateName(gate.name || '');
+                            setEditingGatePromotionType(gate.promotionType || 'Free Consultation');
+                            setEditingGateTargetServiceId(gate.targetServiceId || '');
+                            setEditingGateServiceDescription(gate.serviceDescription || '');
+                            setEditingGateExpiryDate(gate.expiryDate || '');
+                            setEditingGateCustomGreeting(gate.customGreeting || '');
+                          }
+                        }}
+                        className="px-2 py-1 bg-surface-a10 hover:bg-surface-a20 text-theme-light rounded text-[10px] flex items-center space-x-1"
+                        title="Edit Gate Metadata"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>{isEditingThisGate ? 'Cancel Edit' : 'Edit Metadata'}</span>
+                      </button>
+
                       {/* Active/Inactive Toggle Pill */}
                       <button
                         onClick={() => handleToggleGateActive(gate.id, gate.active)}
@@ -781,6 +1077,109 @@ export const ProviderDashboard: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Inline Metadata Edit Drawer */}
+                  {isEditingThisGate ? (
+                    <div className="bg-surface-a0 p-3 rounded-lg border border-info-a0/40 space-y-3 animate-fadeIn">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px]">
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-surface-a40">Gate Name</label>
+                          <input
+                            type="text"
+                            value={editingGateName}
+                            onChange={(e) => setEditingGateName(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-surface-a40">Promotion Type</label>
+                          <select
+                            value={editingGatePromotionType}
+                            onChange={(e) => setEditingGatePromotionType(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          >
+                            <option value="Free Consultation">Free Consultation</option>
+                            <option value="Special Promotion">Special Promotion</option>
+                            <option value="Webinar Perk">Webinar Perk</option>
+                            <option value="VIP Access">VIP Access</option>
+                            <option value="General Promo">General Promo</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-surface-a40">Target Service Tier</label>
+                          <select
+                            value={editingGateTargetServiceId}
+                            onChange={(e) => setEditingGateTargetServiceId(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          >
+                            <option value="">All Tiers Allowed</option>
+                            {services.map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-surface-a40">Expiry Date</label>
+                          <input
+                            type="date"
+                            value={editingGateExpiryDate}
+                            onChange={(e) => setEditingGateExpiryDate(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          />
+                        </div>
+
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-[9px] uppercase text-surface-a40">Custom Greeting</label>
+                          <input
+                            type="text"
+                            value={editingGateCustomGreeting}
+                            onChange={(e) => setEditingGateCustomGreeting(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          />
+                        </div>
+
+                        <div className="space-y-1 sm:col-span-3">
+                          <label className="text-[9px] uppercase text-surface-a40">Service Description Override</label>
+                          <input
+                            type="text"
+                            value={editingGateServiceDescription}
+                            onChange={(e) => setEditingGateServiceDescription(e.target.value)}
+                            className="w-full bg-tonal-a0 border border-surface-a10 rounded px-2 py-1 text-xs text-theme-light"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-1">
+                        <button
+                          onClick={() => handleUpdateGateMetadata(gate.id)}
+                          className="px-3 py-1 bg-info-a0 text-primary-a0 font-bold rounded text-xs flex items-center space-x-1"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Save Metadata</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Display Metadata Summary Badges */
+                    (gate.customGreeting || gate.serviceDescription || targetSvc) && (
+                      <div className="bg-surface-a0/80 p-2.5 rounded-lg border border-surface-a10 text-[11px] space-y-1">
+                        {targetSvc && (
+                          <p className="text-info-a0 font-semibold">
+                            Target Tier: {targetSvc.name} ({targetSvc.feeCents === 0 ? 'Complimentary $0' : `$${(targetSvc.feeCents / 100).toFixed(2)}`})
+                          </p>
+                        )}
+                        {gate.customGreeting && (
+                          <p className="text-theme-light font-medium">"{gate.customGreeting}"</p>
+                        )}
+                        {gate.serviceDescription && (
+                          <p className="text-surface-a40 italic">{gate.serviceDescription}</p>
+                        )}
+                      </div>
+                    )
+                  )}
+
                   <div className="text-surface-a40 text-[10px] flex items-center justify-between">
                     <span>Gate ID: <code className="text-info-a0">{gate.id}</code></span>
                     <span>Created: {new Date(gate.createdAt).toLocaleString()}</span>
@@ -811,10 +1210,13 @@ export const ProviderDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* Minimal Transaction Log */}
@@ -882,6 +1284,22 @@ export const ProviderDashboard: React.FC = () => {
                 <p className="text-base font-bold text-info-a0 font-mono pt-1">{qrModalData.feeText}</p>
               )}
             </div>
+
+            {/* Embedded Campaign Metadata Card if present */}
+            {qrModalData.gateDetails && (qrModalData.gateDetails.serviceDescription || qrModalData.gateDetails.customGreeting || qrModalData.gateDetails.expiryDate) && (
+              <div className="bg-tonal-a0 border border-info-a0/30 rounded-xl p-3 text-xs font-mono space-y-1.5 text-left">
+                <span className="text-[10px] text-info-a0 font-bold uppercase tracking-wider block">Embedded Campaign Parameters</span>
+                {qrModalData.gateDetails.customGreeting && (
+                  <p className="text-theme-light font-medium">"{qrModalData.gateDetails.customGreeting}"</p>
+                )}
+                {qrModalData.gateDetails.serviceDescription && (
+                  <p className="text-surface-a40 text-[11px] italic">{qrModalData.gateDetails.serviceDescription}</p>
+                )}
+                {qrModalData.gateDetails.expiryDate && (
+                  <p className="text-warning-a0 text-[10px] pt-0.5">Valid through: {qrModalData.gateDetails.expiryDate}</p>
+                )}
+              </div>
+            )}
 
             {/* Rendered High-Res QR Image Card */}
             <div className="bg-white p-5 rounded-2xl shadow-inner text-center border-2 border-info-a0/30 max-w-[260px] mx-auto">

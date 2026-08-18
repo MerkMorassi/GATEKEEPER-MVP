@@ -7,7 +7,9 @@ import { db, lockManager } from '../db.js';
 import { calculateSettlement } from '../domain/money.js';
 import { paypalService } from '../paypal/client.js';
 import { createEntitlement, generateOpaqueToken } from '../domain/access.js';
-import { Order, PaymentRecord, EscrowSession, AuthSession, Gate } from '../../src/types/index.js';
+import { generateSupportContext } from '../domain/support.js';
+import { payoutService } from '../services/payout/payoutService.js';
+import { Order, PaymentRecord, EscrowSession, AuthSession, Gate, SupportContext } from '../../src/types/index.js';
 
 export const apiRouter = Router();
 
@@ -176,6 +178,32 @@ apiRouter.get('/download-source', (req: Request, res: Response) => {
 });
 
 // 1a. Gate Resolution
+apiRouter.get('/marketing/gates', (req: Request, res: Response) => {
+  const provider = db.getProvider();
+  const gates = db.getAllGates().filter(g => g.active && g.providerId === provider.id);
+  
+  res.json({
+    success: true,
+    provider: {
+      id: provider.id,
+      name: provider.name,
+      active: provider.active,
+      services: provider.services || [],
+    },
+    gates: gates.map(gate => ({
+      id: gate.id,
+      name: gate.name,
+      token: gate.token,
+      targetServiceId: gate.targetServiceId,
+      customGreeting: gate.customGreeting,
+      serviceDescription: gate.serviceDescription,
+      expiryDate: gate.expiryDate,
+      promotionType: gate.promotionType,
+      isExpired: gate.expiryDate ? new Date(gate.expiryDate).getTime() < Date.now() : false,
+    }))
+  });
+});
+
 apiRouter.get('/gates/:token', (req: Request, res: Response) => {
   const gate = db.getGateByToken(req.params.token);
   if (!gate || !gate.active) {
@@ -193,13 +221,19 @@ apiRouter.get('/gates/:token', (req: Request, res: Response) => {
       name: gate.name,
       providerName: provider.name,
       services: provider.services,
+      targetServiceId: gate.targetServiceId,
+      customGreeting: gate.customGreeting,
+      serviceDescription: gate.serviceDescription,
+      expiryDate: gate.expiryDate,
+      promotionType: gate.promotionType,
+      isExpired: gate.expiryDate ? new Date(gate.expiryDate).getTime() < Date.now() : false,
     }
   });
 });
 
 // 1b. Gate Creation (Provider Only)
 apiRouter.post('/gates/create', requireProviderAuth, (req: Request, res: Response) => {
-  const { name } = req.body;
+  const { name, targetServiceId, customGreeting, serviceDescription, expiryDate, promotionType } = req.body;
   const provider = db.getProvider();
 
   const gate: Gate = {
@@ -209,16 +243,21 @@ apiRouter.post('/gates/create', requireProviderAuth, (req: Request, res: Respons
     token: generateOpaqueToken(),
     active: true,
     createdAt: new Date().toISOString(),
+    targetServiceId: targetServiceId || undefined,
+    customGreeting: customGreeting ? String(customGreeting).trim() : undefined,
+    serviceDescription: serviceDescription ? String(serviceDescription).trim() : undefined,
+    expiryDate: expiryDate ? String(expiryDate).trim() : undefined,
+    promotionType: promotionType ? String(promotionType).trim() : undefined,
   };
 
   db.saveGate(gate);
-  res.json({ success: true, gateToken: gate.token });
+  res.json({ success: true, gateToken: gate.token, gate });
 });
 
 // 1c. Gate Update (Provider Only)
 apiRouter.post('/gates/:id/update', requireProviderAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, active } = req.body;
+  const { name, active, targetServiceId, customGreeting, serviceDescription, expiryDate, promotionType } = req.body;
   const provider = db.getProvider();
 
   const gate = db.getGate(id);
@@ -231,6 +270,11 @@ apiRouter.post('/gates/:id/update', requireProviderAuth, (req: Request, res: Res
 
   if (name !== undefined) gate.name = String(name).trim();
   if (active !== undefined) gate.active = Boolean(active);
+  if (targetServiceId !== undefined) gate.targetServiceId = targetServiceId ? String(targetServiceId) : undefined;
+  if (customGreeting !== undefined) gate.customGreeting = customGreeting ? String(customGreeting).trim() : undefined;
+  if (serviceDescription !== undefined) gate.serviceDescription = serviceDescription ? String(serviceDescription).trim() : undefined;
+  if (expiryDate !== undefined) gate.expiryDate = expiryDate ? String(expiryDate).trim() : undefined;
+  if (promotionType !== undefined) gate.promotionType = promotionType ? String(promotionType).trim() : undefined;
 
   db.saveGate(gate);
   db.logAuditEvent('GATE_UPDATED' as any, 'provider', { gateId: gate.id, name: gate.name, active: gate.active });
@@ -351,7 +395,55 @@ apiRouter.post('/payments/verify', async (req: Request, res: Response) => {
 
       const provider = db.getProvider();
 
-      // Server-authoritative PayPal Verification
+      // Handle Complimentary / $0 Alignment Session Pass
+      if (order.amountCents === 0) {
+        db.logAuditEvent('PAYMENT_CREATED', 'client', { orderId, amountCents: 0, note: 'Complimentary alignment pass' });
+        
+        const paymentRecord: PaymentRecord = {
+          orderId,
+          paypalOrderId: paypalOrderId || 'FREE_ALIGNMENT_PASS',
+          paypalCaptureId: `FREE_CAP_${Date.now()}`,
+          payerEmail: 'complimentary@gatekeeper.local',
+          payerName: 'Complimentary Guest',
+          amountCents: 0,
+          currency: order.currency || 'USD',
+          status: 'captured',
+          timestamp: new Date().toISOString(),
+          verifiedServerSide: true,
+        };
+        db.savePayment(paymentRecord);
+        db.logAuditEvent('PAYMENT_VERIFIED', 'system', { orderId, note: 'Complimentary pass verified' });
+
+        order.status = 'paid';
+        order.paypalOrderId = paymentRecord.paypalOrderId;
+        order.paypalCaptureId = paymentRecord.paypalCaptureId;
+        order.updatedAt = new Date().toISOString();
+        db.saveOrder(order);
+
+        const settlement = calculateSettlement(orderId, 0, order.currency || 'USD');
+        db.saveSettlement(settlement);
+
+        const rawHost = req.headers.host || 'localhost:3000';
+        const safeHost = rawHost.replace(/[^a-zA-Z0-9.:-]/g, '');
+        const appUrl = (process.env.APP_URL || `http://${safeHost}`).trim();
+        const entitlement = await createEntitlement(
+          orderId,
+          provider.id,
+          provider.facetimeHandle,
+          appUrl
+        );
+        db.saveEntitlement(entitlement);
+
+        return res.json({
+          success: true,
+          order,
+          settlement,
+          entitlement,
+          message: 'Complimentary session entitlement issued successfully!'
+        });
+      }
+
+      // Server-authoritative PayPal Verification for paid orders
       db.logAuditEvent('PAYMENT_CREATED', 'client', { orderId, paypalOrderId });
       const captureResult = await paypalService.verifyAndCaptureOrder(paypalOrderId, order.amountCents);
 
@@ -361,10 +453,20 @@ apiRouter.post('/payments/verify', async (req: Request, res: Response) => {
         db.saveOrder(order);
         db.logAuditEvent('PAYMENT_FAILED', 'paypal', { orderId, paypalOrderId, reason: 'Capture failed' });
         db.logAuditEvent('MANUAL_REVIEW_OPENED', 'system', { orderId, reason: 'Payment verification failed' });
+        
+        // System-generated Support Context via centralized domain handler
+        const supportContext = generateSupportContext({
+          reasonCode: 'PAYMENT_CAPTURE_FAILED',
+          sessionId: orderId,
+          paymentId: paypalOrderId,
+          recommendedAction: 'Verify transaction status in PayPal Merchant Console or request manual review.',
+        });
+
         return res.status(402).json({
           success: false,
           error: 'Payment verification failed. Transaction placed under Manual Review.',
           order,
+          supportContext,
         });
       }
 
@@ -377,10 +479,21 @@ apiRouter.post('/payments/verify', async (req: Request, res: Response) => {
           orderId,
           reason: `Amount mismatch: expected ${order.amountCents}, got ${captureResult.amountCents}`,
         });
+
+        // System-generated Support Context via centralized domain handler
+        const supportContext = generateSupportContext({
+          reasonCode: 'AMOUNT_MISMATCH',
+          sessionId: orderId,
+          paymentId: paypalOrderId,
+          recommendedAction: 'Check order fee vs captured amount; operator review required before entitlement issue.',
+          details: { expectedCents: order.amountCents, capturedCents: captureResult.amountCents },
+        });
+
         return res.status(400).json({
           success: false,
           error: 'Payment amount mismatch. Placed under Manual Review.',
           order,
+          supportContext,
         });
       }
 
@@ -417,47 +530,18 @@ apiRouter.post('/payments/verify', async (req: Request, res: Response) => {
         agentCents: settlement.agentCents,       // 15%
       });
 
-      // 4. Initiate Provider Payout (GK-{orderId}-PROVIDER)
-      db.logAuditEvent('PAYOUT_REQUESTED', 'system', {
-        orderId,
-        payoutId: `GK-${orderId}-PROVIDER`,
-        recipientEmail: provider.payoutEmail,
-        amountCents: settlement.providerCents,
-      });
-
-      const payoutResult = await paypalService.executeProviderPayout(
-        orderId,
+      // 4. Initiate Provider Payout via PayoutService / Talentir Adapter
+      const payoutRecord = await payoutService.executePayoutFromSettlement(
+        order,
+        settlement,
         provider.payoutEmail,
-        settlement.providerCents,
-        order.currency
+        provider.id
       );
 
-      db.savePayout({
-        payoutId: payoutResult.payoutId,
-        orderId,
-        recipientEmail: provider.payoutEmail,
-        amountCents: settlement.providerCents,
-        currency: order.currency,
-        status: payoutResult.success ? 'completed' : 'failed',
-        paypalBatchId: payoutResult.batchId,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (payoutResult.success) {
-        db.logAuditEvent('PAYOUT_SUCCEEDED', 'paypal_payouts', {
-          orderId,
-          payoutId: payoutResult.payoutId,
-          batchId: payoutResult.batchId,
-        });
+      if (['completed', 'created', 'approved', 'requested', 'submitted'].includes(payoutRecord.status)) {
         order.status = 'settled';
         order.updatedAt = new Date().toISOString();
         db.saveOrder(order);
-      } else {
-        db.logAuditEvent('PAYOUT_FAILED', 'paypal_payouts', {
-          orderId,
-          payoutId: payoutResult.payoutId,
-          error: payoutResult.error,
-        });
       }
 
       // 5. Issue Entitlement & Disposable Access Token + QR Code
@@ -556,7 +640,14 @@ apiRouter.post('/access/:token/redeem', async (req: Request, res: Response) => {
       entitlement.status = 'expired';
       db.saveEntitlement(entitlement);
       db.logAuditEvent('ENTITLEMENT_EXPIRED', 'system', { token });
-      return res.status(410).json({ success: false, error: 'Access credential has expired.' });
+
+      const supportContext = generateSupportContext({
+        reasonCode: 'ACCESS_EXPIRED',
+        sessionId: entitlement.orderId,
+        recommendedAction: 'Access token time window expired. Client must re-book or request manual support.',
+      });
+
+      return res.status(410).json({ success: false, error: 'Access credential has expired.', supportContext });
     }
 
     // Atomically update state to REDEEMED
@@ -569,6 +660,24 @@ apiRouter.post('/access/:token/redeem', async (req: Request, res: Response) => {
       token,
       orderId: entitlement.orderId,
       redeemedAt: entitlement.redeemedAt,
+    });
+
+    db.logAuditEvent('HANDOFF_PREPARED', 'system', {
+      token,
+      orderId: entitlement.orderId,
+    });
+
+    db.logAuditEvent('HANDOFF_EXECUTED', 'client_scanner', {
+      token,
+      orderId: entitlement.orderId,
+      timestamp: entitlement.redeemedAt,
+    });
+
+    db.logAuditEvent('HANDOFF_COMPLETED', 'system', {
+      token,
+      orderId: entitlement.orderId,
+      handoffType: 'facetime',
+      note: 'Controlled handoff completed into external room. GateKeeper does not observe media channel content.',
     });
 
     return res.json({
@@ -817,5 +926,40 @@ apiRouter.post('/admin/manual-review/resolve', requireAdminAuth, (req: Request, 
     res.json({ success: true, order });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10. Support Context Inspection (Protected by requireAdminAuth)
+apiRouter.get('/admin/support-contexts', requireAdminAuth, (req: Request, res: Response) => {
+  const supportContexts = db.getAllSupportContexts();
+  res.json({
+    success: true,
+    supportContexts,
+  });
+});
+
+// 11. Talentir Payout Webhook Endpoint
+apiRouter.post('/webhooks/payouts/talentir', async (req: Request, res: Response) => {
+  try {
+    const signature = (req.headers['x-talentir-signature'] || req.headers['x-signature'] || '') as string;
+    const rawBody = (req as any).rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+    const result = await payoutService.processWebhook(rawBody, signature);
+    res.status(result.httpStatus).json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 12. Creator Financial Ledger & Payout Breakdown (Protected by requireProviderAuth / Provider Session)
+apiRouter.get('/creator/financials', requireProviderAuth, (req: Request, res: Response) => {
+  try {
+    const provider = db.getProvider();
+    const financials = payoutService.getCreatorFinancials(provider.id);
+    res.json({
+      success: true,
+      financials,
+    });
+  } catch (err: any) {
+    res.status(403).json({ success: false, error: err.message });
   }
 });

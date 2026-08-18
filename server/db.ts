@@ -11,11 +11,19 @@ import {
   EscrowSession,
   Gate,
   AuthSession,
+  SupportContext,
 } from '../src/types/index.js';
 
 const DATA_DIR = process.env.DATA_DIR || process.cwd();
 const DATA_FILE = path.join(DATA_DIR, 'gatekeeper_db.json');
 const TEMP_FILE = path.join(DATA_DIR, 'gatekeeper_db.json.tmp');
+
+interface ProcessedWebhookRecord {
+  key: string; // provider:eventId
+  provider: string;
+  eventId: string;
+  processedAt: string;
+}
 
 interface Schema {
   provider: ProviderConfig;
@@ -28,6 +36,8 @@ interface Schema {
   escrowSessions: Record<string, EscrowSession>;
   gates: Record<string, Gate>;
   authSessions: Record<string, AuthSession>;
+  supportContexts: Record<string, SupportContext>;
+  processedWebhooks: Record<string, ProcessedWebhookRecord>;
 }
 
 const DEFAULT_GATE: Gate = {
@@ -47,6 +57,13 @@ const DEFAULT_PROVIDER: ProviderConfig = {
   facetimeHandle: 'https://facetime.apple.com/join#v=1&p=1z501Y06EfGVyAKrTEhpjw&k=WHqbRARgturVWBiqJXvErxiSLSIRd6-GyoXhqvN6Sfs&l=MERK%20MORASSI',
   active: true,
   services: [
+    {
+      id: 'srv_free',
+      name: 'Complimentary Alignment Session',
+      description: 'Free 30-Minute Discovery & Creative Alignment Session with Merk Morassi.',
+      feeCents: 0,
+      currency: 'USD'
+    },
     {
       id: 'srv_1',
       name: '1-on-1 Confidential Consultation',
@@ -121,7 +138,9 @@ class Database {
           auditEvents: parsed.auditEvents || [],
           escrowSessions: parsed.escrowSessions || {},
           gates,
-          authSessions: parsed.authSessions || {}
+          authSessions: parsed.authSessions || {},
+          supportContexts: parsed.supportContexts || {},
+          processedWebhooks: parsed.processedWebhooks || {},
         };
       } catch (e: any) {
         // G8: Database corruption MUST fail closed rather than resetting data silently!
@@ -143,6 +162,8 @@ class Database {
         [DEFAULT_GATE.id]: DEFAULT_GATE,
       },
       authSessions: {},
+      supportContexts: {},
+      processedWebhooks: {},
     };
     this.saveData(initial);
     return initial;
@@ -324,6 +345,40 @@ class Database {
       delete this.data.authSessions[token];
       this.saveData();
     }
+  }
+
+  // Support Contexts
+  saveSupportContext(context: SupportContext): SupportContext {
+    this.data.supportContexts[context.id] = context;
+    this.saveData();
+    return context;
+  }
+
+  getSupportContext(id: string): SupportContext | undefined {
+    return this.data.supportContexts[id];
+  }
+
+  getAllSupportContexts(): SupportContext[] {
+    return Object.values(this.data.supportContexts).sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  // Webhook Persistent Idempotency Store
+  isWebhookProcessed(provider: string, eventId: string): boolean {
+    const key = `${provider}:${eventId}`;
+    return Boolean(this.data.processedWebhooks[key]);
+  }
+
+  recordProcessedWebhook(provider: string, eventId: string): void {
+    const key = `${provider}:${eventId}`;
+    this.data.processedWebhooks[key] = {
+      key,
+      provider,
+      eventId,
+      processedAt: new Date().toISOString(),
+    };
+    this.saveData();
   }
 }
 

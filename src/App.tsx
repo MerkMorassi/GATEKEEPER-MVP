@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ClientCheckout } from './components/ClientCheckout';
+import { ClientSalesPage } from './components/ClientSalesPage';
 import { ProviderDashboard } from './components/ProviderDashboard';
 import { AgentAudit } from './components/AgentAudit';
 import { AccessScanner } from './components/AccessScanner';
@@ -8,7 +9,7 @@ import { AuthTerminal } from './components/AuthTerminal';
 import { FlashPortal } from './components/FlashPortal';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'portal' | 'client' | 'provider' | 'agent' | 'scanner'>('portal');
+  const [currentTab, setCurrentTab] = useState<'portal' | 'sales' | 'client' | 'provider' | 'agent' | 'scanner'>('portal');
   const [providerActive, setProviderActive] = useState(true);
   const [activeTokenFromHash, setActiveTokenFromHash] = useState<string | undefined>();
   const [activeGateFromHash, setActiveGateFromHash] = useState<string | undefined>();
@@ -99,6 +100,10 @@ export default function App() {
       <main className="flex-1">
         {currentTab === 'portal' && (
           <FlashPortal currentRole={role} onNavigate={handlePortalNavigate} />
+        )}
+
+        {currentTab === 'sales' && (
+          <ClientSalesPage onNavigateToCheckout={() => setCurrentTab('client')} />
         )}
 
         {currentTab === 'client' && (

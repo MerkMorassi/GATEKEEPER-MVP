@@ -236,7 +236,7 @@ async function runBlackBoxVerification() {
     const escrowJson = await validEscrowRes.json();
     assert(Boolean(escrowJson.escrowSession.unmaskedClientEmail), 'Unmasked client email released only via break-glass session', escrowJson.escrowSession.unmaskedClientEmail);
 
-    // 8.4 G4: Concurrent Token Redemption Race Protection
+    // 8.4 G4: Concurrent Token Redemption Race Protection & Handoff Mode Audit Logging
     const raceEntitlement = await createEntitlement('ord_race_01', provider.id, provider.facetimeHandle, 'http://localhost:3000');
     db.saveEntitlement(raceEntitlement);
 
@@ -248,7 +248,38 @@ async function runBlackBoxVerification() {
     const statuses = [raceRes1.status, raceRes2.status].sort();
     assert(statuses[0] === 200 && statuses[1] === 409, 'Concurrent redemption race: Exactly 1 HTTP 200 success and 1 HTTP 409 Conflict', `Statuses: ${statuses.join(', ')}`);
 
-    // 8.5 G5: Concurrent Payment Verification Lock & Idempotency
+    // Verify Handoff Mode Audit Events
+    const auditEvents = db.getAuditEvents();
+    const handoffCompletedEvt = auditEvents.find(e => e.eventType === 'HANDOFF_COMPLETED' && e.details?.token === raceEntitlement.token);
+    assert(Boolean(handoffCompletedEvt), 'Handoff Mode audit event HANDOFF_COMPLETED logged upon entitlement redemption');
+
+    // 8.5 Support Context Generation & Privilege Protection Invariants
+    const failedOrderId = `ord_fail_${Date.now()}`;
+    db.saveOrder({
+      id: failedOrderId,
+      providerId: provider.id,
+      serviceId: defaultService.id,
+      serviceName: defaultService.name,
+      amountCents: defaultService.feeCents,
+      currency: defaultService.currency,
+      status: 'payment_pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const failedPayRes = await fetch(`${baseUrl}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: failedOrderId, paypalOrderId: 'TRIGGER_MOCK_FAILURE' }),
+    });
+    assert(failedPayRes.status === 402, 'Failed payment verification returned HTTP 402');
+    const failedPayJson = await failedPayRes.json();
+    const supportCtx = failedPayJson.supportContext;
+    assert(Boolean(supportCtx), 'Failed payment generated SupportContext object');
+    assert(supportCtx?.identityAccessRequired === false, 'SupportContext invariant: identityAccessRequired is false (does not unblind identity)');
+    assert(supportCtx?.refundAuthorized === false, 'SupportContext invariant: refundAuthorized is false (does not execute refund automatically)');
+
+    // 8.6 G5: Concurrent Payment Verification Lock & Idempotency
     const raceOrderId = `ord_pay_race_${Date.now()}`;
     db.saveOrder({
       id: raceOrderId,
@@ -281,7 +312,101 @@ async function runBlackBoxVerification() {
     const isOneIdempotent = payJson1.message?.includes('Idempotent') || payJson2.message?.includes('Idempotent');
     assert(isOneIdempotent, 'Concurrent payment verification correctly enforced single payment/settlement processing');
 
-    // 8.6 G7: Production Mode Fail-Closed for Missing PayPal Credentials
+    // 8.7 Payment Capture Idempotency & Replay Defense
+    const idempotentOrderId = `ord_idem_${Date.now()}`;
+    db.saveOrder({
+      id: idempotentOrderId,
+      providerId: provider.id,
+      serviceId: defaultService.id,
+      serviceName: defaultService.name,
+      amountCents: defaultService.feeCents,
+      currency: defaultService.currency,
+      status: 'payment_pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const firstVerify = await fetch(`${baseUrl}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: idempotentOrderId, paypalOrderId: `pp_${idempotentOrderId}` }),
+    });
+    assert(firstVerify.status === 200, 'First payment verification succeeds (HTTP 200)');
+    const firstVerifyJson = await firstVerify.json();
+
+    const secondVerify = await fetch(`${baseUrl}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: idempotentOrderId, paypalOrderId: `pp_${idempotentOrderId}` }),
+    });
+    assert(secondVerify.status === 200, 'Sequential duplicate payment verification returns HTTP 200 (Idempotent)');
+    const secondVerifyJson = await secondVerify.json();
+    assert(secondVerifyJson.message?.includes('Idempotent'), 'Sequential duplicate verification contains Idempotent confirmation notice');
+    assert(secondVerifyJson.entitlement?.token === firstVerifyJson.entitlement?.token, 'Sequential duplicate verification returns identical entitlement token without duplicating settlement');
+
+    // 8.8 Payment Authorized Amount Boundary Enforcement (Cannot exceed/mismatch authorized amount)
+    const mismatchOrderId = `ord_mismatch_${Date.now()}`;
+    db.saveOrder({
+      id: mismatchOrderId,
+      providerId: provider.id,
+      serviceId: defaultService.id,
+      serviceName: defaultService.name,
+      amountCents: 15000, // Expected $150.00
+      currency: 'USD',
+      status: 'payment_pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Attempting to inject client-supplied custom amount parameter in payload (Server MUST ignore client amount & rely strictly on DB order.amountCents)
+    const tamperedPayloadRes = await fetch(`${baseUrl}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: mismatchOrderId,
+        paypalOrderId: `pp_${mismatchOrderId}`,
+        amountCents: 100, // Client tries to pay $1.00 for a $150.00 order
+      }),
+    });
+    const tamperedJson = await tamperedPayloadRes.json();
+    assert(tamperedJson.order.amountCents === 15000, 'Server-side payment verification strictly uses DB order amount (15000 cents), ignoring client payload amount injection');
+
+    // 8.9 Client-Side Isolation of Payout & Financial Execution
+    const directPayoutRes = await fetch(`${baseUrl}/admin/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feeCents: 10 }), // Unauthenticated client attempt to alter provider pricing
+    });
+    assert(directPayoutRes.status === 401, 'Unauthenticated client attempt to modify pricing or payment config rejected with HTTP 401');
+
+    // 8.11 Sanitization & Protection of Administrative Endpoints (Identity Unblinding & Manual Review)
+    const unauthUnmaskRes = await fetch(`${baseUrl}/admin/escrow/break-glass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketCode: 'TICKET-DISPUTE-9902',
+        operator: 'attacker',
+        reason: 'Attempted unauthenticated client identity unmasking',
+        orderId: testOrderId,
+      }),
+    });
+    assert(unauthUnmaskRes.status === 401, 'Unauthenticated attempt to invoke break-glass identity escrow unmasking rejected with HTTP 401');
+
+    const unauthManualResolveRes = await fetch(`${baseUrl}/admin/manual-review/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: testOrderId,
+        resolution: 'settle',
+        reason: 'Attempted unauthenticated refund/settlement override',
+      }),
+    });
+    assert(unauthManualResolveRes.status === 401, 'Unauthenticated attempt to resolve manual review or trigger refund/settlement override rejected with HTTP 401');
+
+    const unauthSupportCtxRes = await fetch(`${baseUrl}/admin/support-contexts`);
+    assert(unauthSupportCtxRes.status === 401, 'Unauthenticated attempt to inspect support contexts rejected with HTTP 401');
+
+    // 8.12 G7: Production Mode Fail-Closed for Missing PayPal Credentials
     const originalNodeEnv = process.env.NODE_ENV;
     try {
       process.env.NODE_ENV = 'production';
